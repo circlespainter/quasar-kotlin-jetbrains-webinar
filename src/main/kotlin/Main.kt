@@ -7,6 +7,7 @@ import co.paralleluniverse.strands.*
 import co.paralleluniverse.strands.channels.*
 import co.paralleluniverse.fibers.*
 import co.paralleluniverse.kotlin.fiber
+import java.util.concurrent
 import java.util.function.Supplier
 
 import kotlin.concurrent.thread
@@ -68,34 +69,54 @@ class Stock(val name: String) {
 		hist.map { it.num }.sum() / hist.size()
 }
 
+class SlowAndFarStockInfoMachinery {
+	companion object {
+		val MAX_WAIT_MILLIS: Long = 3000
+
+		fun <I, O> slowAsyncVal(s: I, f: (I) -> O): CompletableFuture<O> {
+			val ret = CompletableFuture<O>()
+			thread {
+				Strand.sleep(ThreadLocalRandom.current().nextLong(0, MAX_WAIT_MILLIS))
+				ret.complete(f(s))
+			}
+			return ret
+		}
+
+		fun findAsync(s: String) = slowAsyncVal(s, { Stock.find(it) ?: Stock.default })
+		fun avgAsync(s: Stock) = slowAsyncVal(s, { it.avg() })
+		fun nextAsync(s: Stock) = slowAsyncVal(s, { it.next() })
+		fun adviceAsync(s: Stock) = slowAsyncVal(s, { it.advice() })
+	}
+}
+
 public fun main(args: Array<String>) {
 	// Our equation solver isn't smart enough and threads are too heavy, so let's try to use Java8's async monads
 	// to build a computation representation.
 
-	// 1) Let's submit the expensive search task to our efficient, async execution engine
-	CompletableFuture.supplyAsync(Supplier {
-		// 3) _Imperative I/O actions_: let's get the stock name from the user
-		print("Insert the stock name: ")
-		// 4) Expensive: find the stock
-		(Stock.find(readLine() ?: "goog") ?: Stock.default) // ...Coool :)))
-		// 5) Let's chain more actions after the search is complete (sequence)
-	}).thenComposeAsync<Unit> (
-		java.util.function.Function {
-			// 6) Let's submit calculation tasks in parallel (-> spawn) to our efficient, async execution engine
-			val calcAvg = CompletableFuture.supplyAsync(Supplier { it.avg() })
-			val calcNext = CompletableFuture.supplyAsync(Supplier { it.next() })
-			val calcAdvice = CompletableFuture.supplyAsync(Supplier { it.advice() })
-			// 7) And finally, _only when they are complete_ (-> join) let's chain the output function
-			CompletableFuture.allOf(calcAvg, calcNext, calcAdvice).thenApply (
-				java.util.function.Function {
-					println("The historical average is: ${calcAvg.join()}")
-					println("The current value is: ${calcNext.join()}")
-					println("The current advice is: ${calcAdvice.join()}")
-				}
-			)
-		}
+	// 1) _Imperative I/O actions_: let's get the stock name from the user
+	print("Insert the stock name: ")
+
+	// 2) Let's submit the expensive search task to our efficient, async execution engine
+	SlowAndFarStockInfoMachinery.findAsync(readLine() ?: "goog")
+		.thenComposeAsync<Unit> (
+			// 4) Let's chain more actions after the search is complete (sequence)
+
+			java.util.function.Function {
+				// 5) Let's submit calculation tasks in parallel (-> spawn) to our efficient, async execution engine
+				val calcAvg = SlowAndFarStockInfoMachinery.avgAsync(it)
+				val calcNext = SlowAndFarStockInfoMachinery.nextAsync(it)
+				val calcAdvice = SlowAndFarStockInfoMachinery.adviceAsync(it)
+				// 6) And finally, _only when they are complete_ (-> join) let's chain the output function
+				CompletableFuture.allOf(calcAvg, calcNext, calcAdvice).thenApply (
+					java.util.function.Function {
+						println("The historical average is: ${calcAvg.join()}")
+						println("The current value is: ${calcNext.join()}")
+						println("The current advice is: ${calcAdvice.join()}")
+					}
+				)
+			}
 	)
 
-	// 2) No need for run, will start immediately. But let's say we have submitted.
+	// 3) No need for run, will start immediately. But let's say we have submitted.
 	println("...Submitted!")
 }
