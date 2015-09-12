@@ -68,11 +68,6 @@ class Stock(val name: String) {
 }
 
 public fun main(args: Array<String>) {
-	// Let's setup some nifty Quasar channels for communication with parallel threads ;)
-	val avgResultChannel = Channels.newChannel<Double>(0);
-	val valueResultChannel = Channels.newChannel<Value>(0);
-	val sentimentResultChannel = Channels.newChannel<Advice>(0);
-
 	// 1) _Imperative I/O actions_: let's get the stock name from the user
 	print("Insert the stock name: ")
 
@@ -80,19 +75,13 @@ public fun main(args: Array<String>) {
 	// ...Coool :)))
 	val s = (Stock.find(readLine() ?: "goog") ?: Stock.default)
 
-	// 3) _Only then_ (-> sequence) get info, but we can do it _in parallel with threads_ as we don't have action dependency
-	thread {
-		avgResultChannel.send(s.avg())
-	}
-	thread {
-		valueResultChannel.send(s.next())
-	}
-	thread {
-		sentimentResultChannel.send(s.advice())
-	}
+	// 3) If our equation solver was smart enough (and our language restricted enough not to exhibit unexpected stateful interactions
+	// (probably purely functional), _it could in theory figure out that all the 3 values are independent and can be computed concurrently_:
 
-	// 4) And finally, _only then_ (-> join) let's output
-	println("The historical average is: ${avgResultChannel.receive()}")
-	println("The current value is: ${valueResultChannel.receive()}")
-	println("The current advice is: ${sentimentResultChannel.receive()}")
+	val res = Triple(s.avg(), s.next(), s.advice())
+
+	// 4) And finally, _only then_ (-> join) let's output (still imperative)
+	println("The historical average is: ${res.first}")
+	println("The current value is: ${res.second}")
+	println("The current advice is: ${res.third}")
 }
