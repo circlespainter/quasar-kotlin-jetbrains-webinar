@@ -7,7 +7,9 @@ import co.paralleluniverse.strands.*
 import co.paralleluniverse.strands.channels.*
 import co.paralleluniverse.fibers.*
 import co.paralleluniverse.fibers.futures.AsyncCompletionStage
+import co.paralleluniverse.kotlin.Receive
 import co.paralleluniverse.kotlin.fiber
+import co.paralleluniverse.kotlin.select
 import java.util.concurrent
 import java.util.function.Supplier
 
@@ -97,32 +99,41 @@ public fun main(args: Array<String>) {
 	// 1) _Imperative I/O actions_: let's get the stock name from the user
 	print("Insert the stock name: ")
 
-	val res = fiber {
+	// 2) Ok... Now that we have super-powers we want to be extra-cool and, instead of joining everything, get results
+	//    over channels and select the first one available.
+	val avgRetCh = Channels.newChannel<Any>(0)
+	val nextRetCh = Channels.newChannel<Any>(0)
+	val adviceRetCh = Channels.newChannel<Any>(0)
+
+	fiber {
 		// Of course, each thread / fiber has full stack available for debugging purposes.
 
-		// 2) Let the fiber convert a long, async operation into a fiber-blocking one and get its result
+		// 3) Let the fiber convert a long, async operation into a fiber-blocking one and get its result.
 		val s = AsyncCompletionStage.get(SlowAndFarStockInfoMachinery.findAsync(readLine() ?: "goog"))
 
-		// 3) Let's launch more fibers to perform in parallel the other info retrieval, converting them into fiber-blocking
-		val running = Triple (
-				fiber {
-					AsyncCompletionStage.get(SlowAndFarStockInfoMachinery.avgAsync(s))
-				},
-				fiber {
-					AsyncCompletionStage.get(SlowAndFarStockInfoMachinery.nextAsync(s))
-				},
-				fiber {
-					AsyncCompletionStage.get(SlowAndFarStockInfoMachinery.adviceAsync(s))
+		// 4) Let's launch more fibers to perform in parallel the other info retrieval, converting them into fiber-blocking,
+		//    and return their result on the channels.
+		fiber {
+			avgRetCh.send(AsyncCompletionStage.get(SlowAndFarStockInfoMachinery.avgAsync(s)))
+		}
+		fiber {
+			nextRetCh.send(AsyncCompletionStage.get(SlowAndFarStockInfoMachinery.nextAsync(s)))
+		}
+		fiber {
+			adviceRetCh.send(AsyncCompletionStage.get(SlowAndFarStockInfoMachinery.adviceAsync(s)))
+		}
+	}
+
+	// 4) Let's print the data in the order of arrival, selecting on the channels.
+	for(i in 1..3)
+		select(60, TimeUnit.SECONDS, Receive(avgRetCh), Receive(nextRetCh), Receive(adviceRetCh)) {
+			when (it) {
+				is Receive -> {
+					if (it.receivePort == avgRetCh) println("The historical average is: ${it.msg}")
+					else if (it.receivePort == nextRetCh) println("The current value is: ${it.msg}")
+					else if (it.receivePort == adviceRetCh) println("The current advice is: ${it.msg}")
 				}
-		)
-
-		// 4) Let's wait for all the retrieving fibers to complete and return their result
-		Triple(running.first.get(), running.second.get(), running.third.get())
-	}.get() // 5) Let's wait for the result triple from the searching fiber
-
-	// 6) All results available again in the main thread, all very sequentially.
-	//    How much easier and debuggable is that compared to monads & co.? Same as using regular threads.
-	println("The historical average is: ${res.first}")
-	println("The current value is: ${res.second}")
-	println("The current advice is: ${res.third}")
+				else -> println("Timeout!!!") // Shouldn't happen
+			}
+		}
 }
