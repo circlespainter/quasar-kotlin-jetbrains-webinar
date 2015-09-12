@@ -7,6 +7,7 @@ import co.paralleluniverse.strands.*
 import co.paralleluniverse.strands.channels.*
 import co.paralleluniverse.fibers.*
 import co.paralleluniverse.kotlin.fiber
+import monads.io.LineStdIOMonad
 
 import kotlin.concurrent.thread
 
@@ -68,20 +69,28 @@ class Stock(val name: String) {
 }
 
 public fun main(args: Array<String>) {
-	// 1) _Imperative I/O actions_: let's get the stock name from the user
-	print("Insert the stock name: ")
+	// _Functional monadic I/O_: let's _define_ a representation of our program using I/O as a formula
+	val ioProgram =
+		LineStdIOMonad.start().semiColon {
+			// 1 Get the stock name
+			LineStdIOMonad.Native.print("Insert the stock name: ").semiColon {
+				LineStdIOMonad.Native.readLine().semiColon {
+					// 2) Find the stock
+					// ...Coool :)))
+					val s = (Stock.find(it) ?: Stock.default)
+					// 3) If our equation solver was smart enough (and our language restricted enough not to exhibit unexpected stateful interactions
+					// (probably purely functional), _it could in theory figure out that all the 3 values are independent and can be computed concurrently_:
+					val res = Triple(s.avg(), s.next(), s.advice())
+					// 4) And finally, _only then_ (-> join) let's output with monadic I/O
+					LineStdIOMonad.Native.printLine("The historical average is: ${res.first}").semiColon {
+						LineStdIOMonad.Native.printLine("The current value is: ${res.second}").semiColon {
+							LineStdIOMonad.Native.printLine("The current advice is: ${res.third}")
+						}
+					}
+				}
+			}
+		}
 
-	// 2) Find the stock
-	// ...Coool :)))
-	val s = (Stock.find(readLine() ?: "goog") ?: Stock.default)
-
-	// 3) If our equation solver was smart enough (and our language restricted enough not to exhibit unexpected stateful interactions
-	// (probably purely functional), _it could in theory figure out that all the 3 values are independent and can be computed concurrently_:
-
-	val res = Triple(s.avg(), s.next(), s.advice())
-
-	// 4) And finally, _only then_ (-> join) let's output (still imperative)
-	println("The historical average is: ${res.first}")
-	println("The current value is: ${res.second}")
-	println("The current advice is: ${res.third}")
+	// 5) Let's run our "impure" I/O program we just define on our "impure" evaluation engine that supports "impure" native I/O functions
+	LineStdIOMonad.End.run(ioProgram)
 }
