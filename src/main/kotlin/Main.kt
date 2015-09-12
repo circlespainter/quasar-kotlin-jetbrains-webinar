@@ -6,6 +6,7 @@ import com.google.common.collect.EvictingQueue
 import co.paralleluniverse.strands.*
 import co.paralleluniverse.strands.channels.*
 import co.paralleluniverse.fibers.*
+import co.paralleluniverse.fibers.futures.AsyncCompletionStage
 import co.paralleluniverse.kotlin.fiber
 import java.util.concurrent
 import java.util.function.Supplier
@@ -90,33 +91,38 @@ class SlowAndFarStockInfoMachinery {
 }
 
 public fun main(args: Array<String>) {
-	// Our equation solver isn't smart enough and threads are too heavy, so let's try to use Java8's async monads
-	// to build a computation representation.
+	// ...So sequence, threads and joins are useful. But why using expensive threads
+	// when we can use featherweight fibers instead?
 
 	// 1) _Imperative I/O actions_: let's get the stock name from the user
 	print("Insert the stock name: ")
 
-	// 2) Let's submit the expensive search task to our efficient, async execution engine
-	SlowAndFarStockInfoMachinery.findAsync(readLine() ?: "goog")
-		.thenComposeAsync<Unit> (
-			// 4) Let's chain more actions after the search is complete (sequence)
+	val res = fiber {
+		// Of course, each thread / fiber has full stack available for debugging purposes.
 
-			java.util.function.Function {
-				// 5) Let's submit calculation tasks in parallel (-> spawn) to our efficient, async execution engine
-				val calcAvg = SlowAndFarStockInfoMachinery.avgAsync(it)
-				val calcNext = SlowAndFarStockInfoMachinery.nextAsync(it)
-				val calcAdvice = SlowAndFarStockInfoMachinery.adviceAsync(it)
-				// 6) And finally, _only when they are complete_ (-> join) let's chain the output function
-				CompletableFuture.allOf(calcAvg, calcNext, calcAdvice).thenApply (
-					java.util.function.Function {
-						println("The historical average is: ${calcAvg.join()}")
-						println("The current value is: ${calcNext.join()}")
-						println("The current advice is: ${calcAdvice.join()}")
-					}
-				)
-			}
-	)
+		// 2) Let the fiber convert a long, async operation into a fiber-blocking one and get its result
+		val s = AsyncCompletionStage.get(SlowAndFarStockInfoMachinery.findAsync(readLine() ?: "goog"))
 
-	// 3) No need for run, will start immediately. But let's say we have submitted.
-	println("...Submitted!")
+		// 3) Let's launch more fibers to perform in parallel the other info retrieval, converting them into fiber-blocking
+		val running = Triple (
+				fiber {
+					AsyncCompletionStage.get(SlowAndFarStockInfoMachinery.avgAsync(s))
+				},
+				fiber {
+					AsyncCompletionStage.get(SlowAndFarStockInfoMachinery.nextAsync(s))
+				},
+				fiber {
+					AsyncCompletionStage.get(SlowAndFarStockInfoMachinery.adviceAsync(s))
+				}
+		)
+
+		// 4) Let's wait for all the retrieving fibers to complete and return their result
+		Triple(running.first.get(), running.second.get(), running.third.get())
+	}.get() // 5) Let's wait for the result triple from the searching fiber
+
+	// 6) All results available again in the main thread, all very sequentially.
+	//    How much easier and debuggable is that compared to monads & co.? Same as using regular threads.
+	println("The historical average is: ${res.first}")
+	println("The current value is: ${res.second}")
+	println("The current advice is: ${res.third}")
 }
