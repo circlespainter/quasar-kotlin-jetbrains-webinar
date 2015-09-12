@@ -21,7 +21,7 @@ enum class Advice {
 // Our Stock
 class Stock(val name: String) {
 	// Default singleton
-	companion object {
+	companion object  {
 		val HISTORY_WINDOW_SIZE = 10
 
 		val default = Stock("whatever")
@@ -61,13 +61,10 @@ class Stock(val name: String) {
 	// Random advice will work for now
 	fun advice(): Advice = Advice.values().get(ThreadLocalRandom.current().nextInt(0, Advice.values().size()))
 
-	// _Imperative_: Let's tell our state-based machine _how_ to calculate it in detail
-	fun avg(): Double {
-		var sum = 0.0
-		for (i in hist)
-			sum += i.num
-		return sum / hist.size()
-	}
+	// _Functional_: let's write a nifty mathematical equation for it
+	fun avg(): Double =
+		// What _is_ it? It is the division by its size of (the sum of (the projection of the historical data on its numerical value))
+		hist.map { it.num }.sum() / hist.size()
 }
 
 public fun main(args: Array<String>) {
@@ -78,12 +75,10 @@ public fun main(args: Array<String>) {
 
 	// 1) _Imperative I/O actions_: let's get the stock name from the user
 	print("Insert the stock name: ")
-	val sNameMaybe = readLine() // Imperative:
 
 	// 2) Find the stock
-	// Not really need for option monads here... But wait, what are these warnings?? :O :P
-	val sMaybe = Stock.find(if (sNameMaybe == null) "goog" else sNameMaybe)
-	val s = (if (sMaybe == null) Stock.default else sMaybe)
+	// ...Coool :)))
+	val s = (Stock.find(readLine() ?: "goog") ?: Stock.default)
 
 	// 3) _Only then_ (-> sequence) get info, but we can do it _in parallel with threads_ as we don't have action dependency
 	thread {
