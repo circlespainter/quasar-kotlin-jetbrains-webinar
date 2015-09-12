@@ -68,8 +68,18 @@ class Stock(val name: String) {
 		hist.map { it.num }.sum() / hist.size()
 }
 
+// Monadic gets into signature!!! Infectious
+val subProgram: (Triple<Double, Value, Advice>) -> LazyLineStdIOMonad<Unit> = {
+	// 4) And finally, _only then_ (-> join) let's output with monadic I/O
+	LazyLineStdIOMonad.Native.printLine("The historical average is: ${it.first}").ioSemiColon { _ -> // ; won't work!!! No interoperability
+		LazyLineStdIOMonad.Native.printLine("The current value is: ${it.second}").ioSemiColon { _ ->
+			LazyLineStdIOMonad.Native.printLine("The current advice is: ${it.third}")
+		}
+	}
+}
+
 public fun main(args: Array<String>) {
-	// _Functional monadic I/O_: let's _define_ a representation of our program using I/O as a formula
+	// _Functional monadic I/O_: let's _define_ a representation of our program  as a "special" equation marked as using I/O (and allowed using it)
 	val ioProgram =
 		LazyLineStdIOMonad.start().ioSemiColon {
 			// 1 Get the stock name
@@ -81,14 +91,7 @@ public fun main(args: Array<String>) {
 					// 3) If our equation solver was smart enough (and our language restricted enough not to exhibit unexpected stateful interactions
 					// (probably purely functional), _it could in theory figure out that all the 3 values are independent and can be computed concurrently_:
 					.pipeThrough { Triple(it.avg(), it.next(), it.advice()) }
-					.ioSemiColon {
-						// 4) And finally, _only then_ (-> join) let's output with monadic I/O
-						LazyLineStdIOMonad.Native.printLine("The historical average is: ${it.first}").ioSemiColon { _ ->
-							LazyLineStdIOMonad.Native.printLine("The current value is: ${it.second}").ioSemiColon { _ ->
-								LazyLineStdIOMonad.Native.printLine("The current advice is: ${it.third}")
-							}
-						}
-					}
+					.ioSemiColon(subProgram)
 			}
 		}
 
