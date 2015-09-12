@@ -7,7 +7,7 @@ import co.paralleluniverse.strands.*
 import co.paralleluniverse.strands.channels.*
 import co.paralleluniverse.fibers.*
 import co.paralleluniverse.kotlin.fiber
-import monads.io.LineStdIOMonad
+import monads.io.LazyLineStdIOMonad
 
 import kotlin.concurrent.thread
 
@@ -71,26 +71,27 @@ class Stock(val name: String) {
 public fun main(args: Array<String>) {
 	// _Functional monadic I/O_: let's _define_ a representation of our program using I/O as a formula
 	val ioProgram =
-		LineStdIOMonad.start().semiColon {
+		LazyLineStdIOMonad.start().ioSemiColon {
 			// 1 Get the stock name
-			LineStdIOMonad.Native.print("Insert the stock name: ").semiColon {
-				LineStdIOMonad.Native.readLine().semiColon {
+			LazyLineStdIOMonad.Native.print("Insert the stock name: ").ioSemiColon {
+				LazyLineStdIOMonad.Native.readLine()
 					// 2) Find the stock
 					// ...Coool :)))
-					val s = (Stock.find(it) ?: Stock.default)
+					.pipeThrough { (Stock.find(it) ?: Stock.default) }
 					// 3) If our equation solver was smart enough (and our language restricted enough not to exhibit unexpected stateful interactions
 					// (probably purely functional), _it could in theory figure out that all the 3 values are independent and can be computed concurrently_:
-					val res = Triple(s.avg(), s.next(), s.advice())
-					// 4) And finally, _only then_ (-> join) let's output with monadic I/O
-					LineStdIOMonad.Native.printLine("The historical average is: ${res.first}").semiColon {
-						LineStdIOMonad.Native.printLine("The current value is: ${res.second}").semiColon {
-							LineStdIOMonad.Native.printLine("The current advice is: ${res.third}")
+					.pipeThrough { Triple(it.avg(), it.next(), it.advice()) }
+					.ioSemiColon {
+						// 4) And finally, _only then_ (-> join) let's output with monadic I/O
+						LazyLineStdIOMonad.Native.printLine("The historical average is: ${it.first}").ioSemiColon { _ ->
+							LazyLineStdIOMonad.Native.printLine("The current value is: ${it.second}").ioSemiColon { _ ->
+								LazyLineStdIOMonad.Native.printLine("The current advice is: ${it.third}")
+							}
 						}
 					}
-				}
 			}
 		}
 
 	// 5) Let's run our "impure" I/O program we just define on our "impure" evaluation engine that supports "impure" native I/O functions
-	LineStdIOMonad.End.run(ioProgram)
+	LazyLineStdIOMonad.End.run(ioProgram)
 }
