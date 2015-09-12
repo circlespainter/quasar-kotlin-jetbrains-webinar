@@ -7,6 +7,7 @@ import co.paralleluniverse.strands.*
 import co.paralleluniverse.strands.channels.*
 import co.paralleluniverse.fibers.*
 import co.paralleluniverse.fibers.futures.AsyncCompletionStage
+import co.paralleluniverse.kotlin.Actor
 import co.paralleluniverse.kotlin.Receive
 import co.paralleluniverse.kotlin.fiber
 import co.paralleluniverse.kotlin.select
@@ -99,41 +100,57 @@ public fun main(args: Array<String>) {
 	// 1) _Imperative I/O actions_: let's get the stock name from the user
 	print("Insert the stock name: ")
 
-	// 2) Ok... Now that we have super-powers we want to be extra-cool and, instead of joining everything, get results
-	//    over channels and select the first one available.
-	val avgRetCh = Channels.newChannel<Any>(0)
-	val nextRetCh = Channels.newChannel<Any>(0)
-	val adviceRetCh = Channels.newChannel<Any>(0)
+	// 2) Now with a newly spawned actor doing selective receives!
+	val receiverAct = object : Actor() {
+		override Suspendable fun doRun() {
+			// 6) Let's receive and print first either the average or the value.
+			for (i in 1..2)
+				receive(60, TimeUnit.SECONDS) {
+					when (it) {
+						is Double -> println("The historical average is: ${it}")
+						is Value -> println("The current value is: ${it}")
+						is Timeout -> println("Timeout!!!") // Shouldn't happen
+						else -> defer()
+					}
+				}
 
-	fiber {
-		// Of course, each thread / fiber has full stack available for debugging purposes.
+			// 7) Only then let's receive and print the advice.
+			receive(60, TimeUnit.SECONDS) {
+				when (it) {
+					is Advice -> {
+						println("The current advice is: ${it}")
+						return // Exit the actor w/non-local return
+					}
+					else -> println("Unexpected!!!") // Shouldn't happen
+				}
+			}
 
-		// 3) Let the fiber convert a long, async operation into a fiber-blocking one and get its result.
-		val s = AsyncCompletionStage.get(SlowAndFarStockInfoMachinery.findAsync(readLine() ?: "goog"))
-
-		// 4) Let's launch more fibers to perform in parallel the other info retrieval, converting them into fiber-blocking,
-		//    and return their result on the channels.
-		fiber {
-			avgRetCh.send(AsyncCompletionStage.get(SlowAndFarStockInfoMachinery.avgAsync(s)))
-		}
-		fiber {
-			nextRetCh.send(AsyncCompletionStage.get(SlowAndFarStockInfoMachinery.nextAsync(s)))
-		}
-		fiber {
-			adviceRetCh.send(AsyncCompletionStage.get(SlowAndFarStockInfoMachinery.adviceAsync(s)))
+			println("Never printed")
 		}
 	}
 
-	// 4) Let's print the data in the order of arrival, selecting on the channels.
-	for(i in 1..3)
-		select(60, TimeUnit.SECONDS, Receive(avgRetCh), Receive(nextRetCh), Receive(adviceRetCh)) {
-			when (it) {
-				is Receive -> {
-					if (it.receivePort == avgRetCh) println("The historical average is: ${it.msg}")
-					else if (it.receivePort == nextRetCh) println("The current value is: ${it.msg}")
-					else if (it.receivePort == adviceRetCh) println("The current advice is: ${it.msg}")
-				}
-				else -> println("Timeout!!!") // Shouldn't happen
-			}
+	val receiverRef = receiverAct.spawn() // The actor handle
+
+	// Fibers (and any strands) can of course talk to actors
+	fiber {
+		// Of course, each thread / fiber has full stack available for debugging purposes.
+
+		// 4) Let the fiber convert a long, async operation into a fiber-blocking one and get its result.
+		val s = AsyncCompletionStage.get(SlowAndFarStockInfoMachinery.findAsync(readLine() ?: "goog"))
+
+		// 5) Let's launch more fibers to perform in parallel the other info retrieval, converting them into fiber-blocking,
+		//    and return their result on the channels.
+		fiber {
+			receiverRef.send(AsyncCompletionStage.get(SlowAndFarStockInfoMachinery.avgAsync(s)))
 		}
+		fiber {
+			receiverRef.send(AsyncCompletionStage.get(SlowAndFarStockInfoMachinery.nextAsync(s)))
+		}
+		fiber {
+			receiverRef.send(AsyncCompletionStage.get(SlowAndFarStockInfoMachinery.adviceAsync(s)))
+		}
+	}
+
+	// 3) Wait for actor termination before exiting
+	receiverAct.join()
 }

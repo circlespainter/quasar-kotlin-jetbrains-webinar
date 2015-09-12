@@ -19,6 +19,8 @@ sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 ext.quasarVer       = '0.7.3'
+ext.logbackVer      = '1.1.3'
+ext.slf4jVer        = '1.7.12'
 
 [compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
 
@@ -29,6 +31,8 @@ configurations {
 configurations.all {
     resolutionStrategy {
         failOnVersionConflict()
+
+        force "org.slf4j:slf4j-api:$slf4jVer"
     }
 }
 
@@ -45,6 +49,8 @@ dependencies {
     compile "co.paralleluniverse:quasar-kotlin:${quasarVer}"
 
     quasar "co.paralleluniverse:quasar-core:${quasarVer}${classifier}@jar"
+
+    runtime "ch.qos.logback:logback-classic:${logbackVer}"
 }
 
 mainClassName = '_DefaultPackage'

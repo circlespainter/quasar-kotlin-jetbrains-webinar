@@ -3,6 +3,8 @@
   <component name="ChangeListManager">
     <list default="true" id="dc05898a-793a-48ce-9db9-71204027eb03" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/build.gradle" afterPath="$PROJECT_DIR$/build.gradle" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/quasar-kotlin-jetbrains-webinar.iml" afterPath="$PROJECT_DIR$/quasar-kotlin-jetbrains-webinar.iml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/src/main/kotlin/Main.kt" afterPath="$PROJECT_DIR$/src/main/kotlin/Main.kt" />
     </list>
     <ignored path="$PROJECT_DIR$/.gradle/" />
@@ -49,63 +51,23 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="build.gradle" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/build.gradle">
-          <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0">
-              <caret line="21" column="0" selection-start-line="21" selection-start-column="0" selection-end-line="21" selection-end-column="0" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
       <file leaf-file-name="Main.kt" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/main/kotlin/Main.kt">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.7615894">
-              <caret line="139" column="0" selection-start-line="139" selection-start-column="0" selection-end-line="139" selection-end-column="0" />
+            <state vertical-scroll-proportion="0.6253521">
+              <caret line="120" column="0" selection-start-line="120" selection-start-column="0" selection-end-line="120" selection-end-column="0" />
               <folding>
-                <element signature="e#0#498#0" expanded="true" />
+                <element signature="e#0#538#0" expanded="true" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="Kotlin.kt" pinned="false" current-in-tab="false">
-        <entry file="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/co.paralleluniverse/quasar-kotlin/0.7.3/7da8dbddd6f6bfa07f74369d659cd5216181f27b/quasar-kotlin-0.7.3-sources.jar!/co/paralleluniverse/kotlin/Kotlin.kt">
+      <file leaf-file-name="Actor.kt" pinned="false" current-in-tab="false">
+        <entry file="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/co.paralleluniverse/quasar-kotlin/0.7.3/7da8dbddd6f6bfa07f74369d659cd5216181f27b/quasar-kotlin-0.7.3-sources.jar!/co/paralleluniverse/kotlin/Actor.kt">
           <provider selected="true" editor-type-id="text-editor">
             <state vertical-scroll-proportion="0.0">
-              <caret line="77" column="23" selection-start-line="77" selection-start-column="23" selection-end-line="77" selection-end-column="23" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="JavaAgent.java" pinned="false" current-in-tab="false">
-        <entry file="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/co.paralleluniverse/quasar-core/0.7.3/fc71859a3214606c561c97766f43aa632a0dd583/quasar-core-0.7.3-sources.jar!/co/paralleluniverse/fibers/instrument/JavaAgent.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0">
-              <caret line="173" column="0" selection-start-line="173" selection-start-column="0" selection-end-line="173" selection-end-column="0" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="Stack.java" pinned="false" current-in-tab="false">
-        <entry file="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/co.paralleluniverse/quasar-core/0.7.3/fc71859a3214606c561c97766f43aa632a0dd583/quasar-core-0.7.3-sources.jar!/co/paralleluniverse/fibers/Stack.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0">
-              <caret line="59" column="0" selection-start-line="59" selection-start-column="0" selection-end-line="59" selection-end-column="0" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="Collections.kt" pinned="false" current-in-tab="false">
-        <entry file="jar://$APPLICATION_HOME_DIR$/plugins/Kotlin/lib/kotlin-plugin.jar!/kotlin/Collections.kt">
-          <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0">
-              <caret line="192" column="0" selection-start-line="192" selection-start-column="0" selection-end-line="192" selection-end-column="0" />
+              <caret line="110" column="0" selection-start-line="110" selection-start-column="0" selection-end-line="110" selection-end-column="0" />
               <folding />
             </state>
           </provider>
@@ -349,7 +311,7 @@
     </option>
     <option name="modificationStamps">
       <map>
-        <entry key="$PROJECT_DIR$" value="1442047691755" />
+        <entry key="$PROJECT_DIR$" value="1442096235819" />
       </map>
     </option>
     <option name="projectBuildClasspath">
@@ -388,6 +350,8 @@
                             <option value="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib/0.12.613/2e4588fbb00744b167987726261387d1b94472f5/kotlin-stdlib-0.12.613.jar" />
                             <option value="$USER_HOME$/.gradle/caches/modules-2/files-2.1/co.paralleluniverse/quasar-actors/0.7.3/fdb19139e523777c460413e8a7b94887468a2386/quasar-actors-0.7.3-sources.jar" />
                             <option value="$USER_HOME$/.gradle/caches/modules-2/files-2.1/co.paralleluniverse/quasar-actors/0.7.3/ed00111b69ae27cb5cb24b88addac5de77d7c827/quasar-actors-0.7.3.jar" />
+                            <option value="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.slf4j/slf4j-api/1.7.12/58697792617f38bf86d8e26bc004aac505e516a9/slf4j-api-1.7.12-sources.jar" />
+                            <option value="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.slf4j/slf4j-api/1.7.12/8e20852d05222dc286bf1c71d78d0531e177c317/slf4j-api-1.7.12.jar" />
                             <option value="$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.google.protobuf/protobuf-java/2.6.1/cf47bfc6a10f85d14bc4c078a48d163b5903a291/protobuf-java-2.6.1-sources.jar" />
                             <option value="$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.google.protobuf/protobuf-java/2.6.1/d9521f2aecb909835746b7a5facf612af5e890e8/protobuf-java-2.6.1.jar" />
                             <option value="$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.esotericsoftware.minlog/minlog/1.2/c0bf75c30b19393673253e25708aa797a545fa10/minlog-1.2-sources.jar" />
@@ -398,8 +362,6 @@
                             <option value="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-runtime/0.12.613/71ca776bd1472428aac67dd8b41813c861fda844/kotlin-runtime-0.12.613.jar" />
                             <option value="$USER_HOME$/.gradle/caches/modules-2/files-2.1/net.bytebuddy/byte-buddy/0.6.15/c822d1549157e2ee5218201c33c67cd3abf9abf1/byte-buddy-0.6.15-sources.jar" />
                             <option value="$USER_HOME$/.gradle/caches/modules-2/files-2.1/net.bytebuddy/byte-buddy/0.6.15/571a2d0c1eea29c95481371e2186dbefceca96fb/byte-buddy-0.6.15.jar" />
-                            <option value="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.slf4j/slf4j-api/1.7.12/58697792617f38bf86d8e26bc004aac505e516a9/slf4j-api-1.7.12-sources.jar" />
-                            <option value="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.slf4j/slf4j-api/1.7.12/8e20852d05222dc286bf1c71d78d0531e177c317/slf4j-api-1.7.12.jar" />
                             <option value="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-gradle-plugin/0.12.1230/8861b01ca1aa6fb302f4744ae96707addd69d266/kotlin-gradle-plugin-0.12.1230-sources.jar" />
                             <option value="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-gradle-plugin/0.12.1230/2f0139fc515ace5a3f93cf476d8d80fb6157eeda/kotlin-gradle-plugin-0.12.1230.jar" />
                             <option value="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib/0.12.1230/923109e3573c774f072ae30a926a957ed2b3102a/kotlin-stdlib-0.12.1230-sources.jar" />
@@ -516,9 +478,9 @@
       <list>
         <option value="$PROJECT_DIR$/src/main/kotlin/QuasarIncreasingEchoApp.kt" />
         <option value="$PROJECT_DIR$/.gitignore" />
-        <option value="$PROJECT_DIR$/build.gradle" />
         <option value="$PROJECT_DIR$/src/main/kotlin/IOMonad.kt" />
         <option value="$PROJECT_DIR$/src/main/kotlin/monads/io/IOMonad.kt" />
+        <option value="$PROJECT_DIR$/build.gradle" />
         <option value="$PROJECT_DIR$/src/main/kotlin/Main.kt" />
       </list>
     </option>
@@ -565,6 +527,10 @@
             <PATH_ELEMENT>
               <option name="myItemId" value="quasar-kotlin-jetbrains-webinar" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="External Libraries" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ExternalLibrariesNode" />
             </PATH_ELEMENT>
           </PATH>
           <PATH>
@@ -948,7 +914,7 @@
     </recent_temporary>
   </component>
   <component name="SbtLocalSettings">
-    <option name="lastUpdateTimestamp" value="1442047697859" />
+    <option name="lastUpdateTimestamp" value="1442096250201" />
     <option name="externalProjectsViewState">
       <projects_view />
     </option>
@@ -978,12 +944,12 @@
       <window_info id="Maven Projects" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="REPL" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="4" side_tool="true" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3283582" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.34871098" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.34871098" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Leiningen" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Designer" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.21816881" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
-      <window_info id="Gradle" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.3201389" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Gradle" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" weight="0.3197425" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="UI Designer" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
@@ -1014,39 +980,99 @@
       <breakpoints>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/kotlin/Main.kt</url>
-          <line>111</line>
+          <line>138</line>
           <properties />
           <option name="timeStamp" value="9" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/kotlin/Main.kt</url>
-          <line>116</line>
+          <line>143</line>
           <properties />
           <option name="timeStamp" value="10" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/kotlin/Main.kt</url>
-          <line>119</line>
+          <line>146</line>
           <properties />
           <option name="timeStamp" value="11" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/kotlin/Main.kt</url>
-          <line>122</line>
+          <line>149</line>
           <properties />
           <option name="timeStamp" value="12" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/kotlin/Main.kt</url>
-          <line>99</line>
+          <line>100</line>
           <properties />
           <option name="timeStamp" value="15" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/kotlin/Main.kt</url>
+          <line>106</line>
+          <properties />
+          <option name="timeStamp" value="16" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/kotlin/Main.kt</url>
+          <line>109</line>
+          <properties />
+          <option name="timeStamp" value="17" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/kotlin/Main.kt</url>
+          <line>110</line>
+          <properties />
+          <option name="timeStamp" value="18" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/kotlin/Main.kt</url>
+          <line>111</line>
+          <properties />
+          <option name="timeStamp" value="19" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/kotlin/Main.kt</url>
+          <line>112</line>
+          <properties />
+          <option name="timeStamp" value="20" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/kotlin/Main.kt</url>
+          <line>120</line>
+          <properties />
+          <option name="timeStamp" value="21" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/kotlin/Main.kt</url>
+          <line>123</line>
+          <properties />
+          <option name="timeStamp" value="22" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/kotlin/Main.kt</url>
+          <line>127</line>
+          <properties />
+          <option name="timeStamp" value="23" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/kotlin/Main.kt</url>
+          <line>107</line>
+          <properties />
+          <option name="timeStamp" value="24" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/kotlin/Main.kt</url>
+          <line>154</line>
+          <properties />
+          <option name="timeStamp" value="25" />
         </line-breakpoint>
       </breakpoints>
       <breakpoints-dialog>
         <breakpoints-dialog />
       </breakpoints-dialog>
-      <option name="time" value="16" />
+      <option name="time" value="26" />
     </breakpoint-manager>
     <watches-manager />
   </component>
@@ -1068,7 +1094,7 @@
         <state vertical-scroll-proportion="0.0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
-            <element signature="e#0#498#0" expanded="true" />
+            <element signature="e#0#538#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -1077,7 +1103,14 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
           <caret line="173" column="0" selection-start-line="173" selection-start-column="0" selection-end-line="173" selection-end-column="0" />
-          <folding />
+          <folding>
+            <element signature="e#0#9532#0" expanded="false" />
+            <element signature="imports" expanded="false" />
+            <element signature="e#6892#6893#0" expanded="false" />
+            <element signature="e#6921#6922#0" expanded="false" />
+            <element signature="e#7111#7112#0" expanded="false" />
+            <element signature="e#7167#7168#0" expanded="false" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -1085,7 +1118,34 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
           <caret line="59" column="0" selection-start-line="59" selection-start-column="0" selection-end-line="59" selection-end-column="0" />
-          <folding />
+          <folding>
+            <element signature="e#0#12101#0" expanded="false" />
+            <element signature="imports" expanded="false" />
+            <element signature="e#2402#2403#0" expanded="false" />
+            <element signature="e#2430#2431#0" expanded="false" />
+            <element signature="e#2514#2515#0" expanded="false" />
+            <element signature="e#2536#2537#0" expanded="false" />
+            <element signature="e#2598#2599#0" expanded="false" />
+            <element signature="e#2627#2628#0" expanded="false" />
+            <element signature="e#9884#9885#0" expanded="false" />
+            <element signature="e#9936#9937#0" expanded="false" />
+            <element signature="e#9984#9985#0" expanded="false" />
+            <element signature="e#10043#10044#0" expanded="false" />
+            <element signature="e#10109#10110#0" expanded="false" />
+            <element signature="e#10165#10166#0" expanded="false" />
+            <element signature="e#10216#10217#0" expanded="false" />
+            <element signature="e#10276#10277#0" expanded="false" />
+            <element signature="e#10346#10347#0" expanded="false" />
+            <element signature="e#10402#10403#0" expanded="false" />
+            <element signature="e#10457#10458#0" expanded="false" />
+            <element signature="e#10517#10518#0" expanded="false" />
+            <element signature="e#11510#11511#0" expanded="false" />
+            <element signature="e#11572#11573#0" expanded="false" />
+            <element signature="e#11644#11645#0" expanded="false" />
+            <element signature="e#11706#11707#0" expanded="false" />
+            <element signature="e#12043#12044#0" expanded="false" />
+            <element signature="e#12091#12092#0" expanded="false" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -1184,14 +1244,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/build.gradle">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
-          <caret line="21" column="0" selection-start-line="21" selection-start-column="0" selection-end-line="21" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="jar:///usr/lib/jvm/java-8-oracle/src.zip!/java/util/function/Supplier.java">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.52797204">
@@ -1203,21 +1255,55 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
           <caret line="173" column="0" selection-start-line="173" selection-start-column="0" selection-end-line="173" selection-end-column="0" />
-          <folding />
+          <folding>
+            <element signature="e#0#9532#0" expanded="false" />
+            <element signature="imports" expanded="false" />
+            <element signature="e#6892#6893#0" expanded="false" />
+            <element signature="e#6921#6922#0" expanded="false" />
+            <element signature="e#7111#7112#0" expanded="false" />
+            <element signature="e#7167#7168#0" expanded="false" />
+          </folding>
         </state>
       </provider>
     </entry>
     <entry file="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/co.paralleluniverse/quasar-core/0.7.3/fc71859a3214606c561c97766f43aa632a0dd583/quasar-core-0.7.3-sources.jar!/co/paralleluniverse/fibers/Stack.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
+        <state vertical-scroll-proportion="2.25">
           <caret line="59" column="0" selection-start-line="59" selection-start-column="0" selection-end-line="59" selection-end-column="0" />
-          <folding />
+          <folding>
+            <element signature="e#0#12101#0" expanded="false" />
+            <element signature="imports" expanded="false" />
+            <element signature="e#2402#2403#0" expanded="false" />
+            <element signature="e#2430#2431#0" expanded="false" />
+            <element signature="e#2514#2515#0" expanded="false" />
+            <element signature="e#2536#2537#0" expanded="false" />
+            <element signature="e#2598#2599#0" expanded="false" />
+            <element signature="e#2627#2628#0" expanded="false" />
+            <element signature="e#9884#9885#0" expanded="false" />
+            <element signature="e#9936#9937#0" expanded="false" />
+            <element signature="e#9984#9985#0" expanded="false" />
+            <element signature="e#10043#10044#0" expanded="false" />
+            <element signature="e#10109#10110#0" expanded="false" />
+            <element signature="e#10165#10166#0" expanded="false" />
+            <element signature="e#10216#10217#0" expanded="false" />
+            <element signature="e#10276#10277#0" expanded="false" />
+            <element signature="e#10346#10347#0" expanded="false" />
+            <element signature="e#10402#10403#0" expanded="false" />
+            <element signature="e#10457#10458#0" expanded="false" />
+            <element signature="e#10517#10518#0" expanded="false" />
+            <element signature="e#11510#11511#0" expanded="false" />
+            <element signature="e#11572#11573#0" expanded="false" />
+            <element signature="e#11644#11645#0" expanded="false" />
+            <element signature="e#11706#11707#0" expanded="false" />
+            <element signature="e#12043#12044#0" expanded="false" />
+            <element signature="e#12091#12092#0" expanded="false" />
+          </folding>
         </state>
       </provider>
     </entry>
     <entry file="jar://$APPLICATION_HOME_DIR$/plugins/Kotlin/lib/kotlin-plugin.jar!/kotlin/Collections.kt">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
+        <state vertical-scroll-proportion="9.043269">
           <caret line="192" column="0" selection-start-line="192" selection-start-column="0" selection-end-line="192" selection-end-column="0" />
           <folding />
         </state>
@@ -1225,18 +1311,68 @@
     </entry>
     <entry file="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/co.paralleluniverse/quasar-kotlin/0.7.3/7da8dbddd6f6bfa07f74369d659cd5216181f27b/quasar-kotlin-0.7.3-sources.jar!/co/paralleluniverse/kotlin/Kotlin.kt">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0">
+        <state vertical-scroll-proportion="0.74278843">
           <caret line="77" column="23" selection-start-line="77" selection-start-column="23" selection-end-line="77" selection-end-column="23" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/build.gradle">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="-5.5384617">
+          <caret line="18" column="24" selection-start-line="18" selection-start-column="24" selection-end-line="18" selection-end-column="24" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/co.paralleluniverse/quasar-actors/0.7.3/fdb19139e523777c460413e8a7b94887468a2386/quasar-actors-0.7.3-sources.jar!/co/paralleluniverse/actors/ActorRunner.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="-3.3333333">
+          <caret line="61" column="0" selection-start-line="61" selection-start-column="0" selection-end-line="61" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/co.paralleluniverse/quasar-core/0.7.3/fc71859a3214606c561c97766f43aa632a0dd583/quasar-core-0.7.3-sources.jar!/co/paralleluniverse/fibers/Fiber.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="54.666668">
+          <caret line="743" column="0" selection-start-line="743" selection-start-column="0" selection-end-line="743" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/co.paralleluniverse/quasar-core/0.7.3/fc71859a3214606c561c97766f43aa632a0dd583/quasar-core-0.7.3-sources.jar!/co/paralleluniverse/fibers/FiberForkJoinScheduler.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="20.166666">
+          <caret line="264" column="0" selection-start-line="264" selection-start-column="0" selection-end-line="264" selection-end-column="0" />
+          <folding>
+            <element signature="e#10026#10027#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/co.paralleluniverse/quasar-core/0.7.3/fc71859a3214606c561c97766f43aa632a0dd583/quasar-core-0.7.3-sources.jar!/co/paralleluniverse/concurrent/forkjoin/ParkableForkJoinTask.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.33157894">
+          <caret line="72" column="0" selection-start-line="72" selection-start-column="0" selection-end-line="72" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/co.paralleluniverse/quasar-kotlin/0.7.3/7da8dbddd6f6bfa07f74369d659cd5216181f27b/quasar-kotlin-0.7.3-sources.jar!/co/paralleluniverse/kotlin/Actor.kt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0">
+          <caret line="110" column="0" selection-start-line="110" selection-start-column="0" selection-end-line="110" selection-end-column="0" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/src/main/kotlin/Main.kt">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.7615894">
-          <caret line="139" column="0" selection-start-line="139" selection-start-column="0" selection-end-line="139" selection-end-column="0" />
+        <state vertical-scroll-proportion="0.6253521">
+          <caret line="120" column="0" selection-start-line="120" selection-start-column="0" selection-end-line="120" selection-end-column="0" />
           <folding>
-            <element signature="e#0#498#0" expanded="true" />
+            <element signature="e#0#538#0" expanded="true" />
           </folding>
         </state>
       </provider>
