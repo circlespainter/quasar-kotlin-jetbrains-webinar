@@ -7,7 +7,7 @@ import co.paralleluniverse.strands.*
 import co.paralleluniverse.strands.channels.*
 import co.paralleluniverse.fibers.*
 import co.paralleluniverse.kotlin.fiber
-import monads.io.LazyLineStdIOMonad
+import java.util.function.Supplier
 
 import kotlin.concurrent.thread
 
@@ -68,33 +68,34 @@ class Stock(val name: String) {
 		hist.map { it.num }.sum() / hist.size()
 }
 
-// Monadic gets into signature!!! Infectious
-val subProgram: (Triple<Double, Value, Advice>) -> LazyLineStdIOMonad<Unit> = {
-	// 4) And finally, _only then_ (-> join) let's output with monadic I/O
-	LazyLineStdIOMonad.Native.printLine("The historical average is: ${it.first}").ioSemiColon { _ -> // ; won't work!!! No interoperability
-		LazyLineStdIOMonad.Native.printLine("The current value is: ${it.second}").ioSemiColon { _ ->
-			LazyLineStdIOMonad.Native.printLine("The current advice is: ${it.third}")
-		}
-	}
-}
-
 public fun main(args: Array<String>) {
-	// _Functional monadic I/O_: let's _define_ a representation of our program  as a "special" equation marked as using I/O (and allowed using it)
-	val ioProgram =
-		LazyLineStdIOMonad.start().ioSemiColon {
-			// 1 Get the stock name
-			LazyLineStdIOMonad.Native.print("Insert the stock name: ").ioSemiColon {
-				LazyLineStdIOMonad.Native.readLine()
-					// 2) Find the stock
-					// ...Coool :)))
-					.pipeThrough { (Stock.find(it) ?: Stock.default) }
-					// 3) If our equation solver was smart enough (and our language restricted enough not to exhibit unexpected stateful interactions
-					// (probably purely functional), _it could in theory figure out that all the 3 values are independent and can be computed concurrently_:
-					.pipeThrough { Triple(it.avg(), it.next(), it.advice()) }
-					.ioSemiColon(subProgram)
-			}
-		}
+	// Our equation solver isn't smart enough and threads are too heavy, so let's try to use Java8's async monads
+	// to build a computation representation.
 
-	// 5) Let's run our "impure" I/O program we just define on our "impure" evaluation engine that supports "impure" native I/O functions
-	LazyLineStdIOMonad.End.run(ioProgram)
+	// 1) Let's submit the expensive search task to our efficient, async execution engine
+	CompletableFuture.supplyAsync(Supplier {
+		// 3) _Imperative I/O actions_: let's get the stock name from the user
+		print("Insert the stock name: ")
+		// 4) Expensive: find the stock
+		(Stock.find(readLine() ?: "goog") ?: Stock.default) // ...Coool :)))
+		// 5) Let's chain more actions after the search is complete (sequence)
+	}).thenComposeAsync<Unit> (
+		java.util.function.Function {
+			// 6) Let's submit calculation tasks in parallel (-> spawn) to our efficient, async execution engine
+			val calcAvg = CompletableFuture.supplyAsync(Supplier { it.avg() })
+			val calcNext = CompletableFuture.supplyAsync(Supplier { it.next() })
+			val calcAdvice = CompletableFuture.supplyAsync(Supplier { it.advice() })
+			// 7) And finally, _only when they are complete_ (-> join) let's chain the output function
+			CompletableFuture.allOf(calcAvg, calcNext, calcAdvice).thenApply (
+				java.util.function.Function {
+					println("The historical average is: ${calcAvg.join()}")
+					println("The current value is: ${calcNext.join()}")
+					println("The current advice is: ${calcAdvice.join()}")
+				}
+			)
+		}
+	)
+
+	// 2) No need for run, will start immediately. But let's say we have submitted.
+	println("...Submitted!")
 }
