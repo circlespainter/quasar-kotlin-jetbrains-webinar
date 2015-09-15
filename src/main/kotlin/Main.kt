@@ -3,6 +3,7 @@ import java.util.*
 
 // - Kotlin support _import bindings_.
 import java.util.concurrent as jc
+import java.util.function.*
 
 import com.google.common.collect.EvictingQueue
 
@@ -50,16 +51,33 @@ class Stock(val name: String) {
 		// - Companion object methods and properties can be used as an equivalent of Java's _static_.
 		// - Methods can be defined by an expression, in this case the return type is optional.
 		// - Method parameters can also have default values.
-		fun find(name: String = "goog") =
+		private fun find(name: String = "goog") =
 				// - Kotlin supports higher-order functions.
 				// - If the last parameter is a function, a DSL-like block-based syntax can be used.
 				// - A _lambda_, or _function literal_, has the form `{ (param1[:Type1], ...) -> BODY }` and
-		    //   if there is only a single parameter the `{ BODY }` form can be used and the parameter
-		    //   can be referred to as `it`.
+				//   if there is only a single parameter the `{ BODY }` form can be used and the parameter
+				//   can be referred to as `it`.
 				cache.getOrPut(name) {
 					Stock(name)
 				}
 		private val cache = jc.ConcurrentHashMap<String, Stock>()
+
+		// - We'll simulate a slow system with threads that will wait up to 3 seconds to answer our inquiry
+		private val MAX_WAIT_MILLIS: Long = 3000
+		private fun <I, O> slowAsyncVal(s: I, f: (I) -> O): CompletableFuture<O> {
+			val ret = CompletableFuture<O>()
+			thread {
+				Strand.sleep(ThreadLocalRandom.current().nextLong(0, MAX_WAIT_MILLIS))
+				ret.complete(f(s))
+			}
+			return ret
+		}
+		fun findAsync(s: String) = slowAsyncVal(s) { Stock.find(it) ?: Stock.default }
+		fun avgAsync(s: Stock) = slowAsyncVal(s) {
+			it.avg()
+		}
+		fun currentAsync(s: Stock) = slowAsyncVal(s) { it.current() }
+		fun adviceAsync(s: Stock) = slowAsyncVal(s) { it.advice() }
 	}
 
 	/**
@@ -94,7 +112,7 @@ class Stock(val name: String) {
 	/**
 	 * Calculates the current stock value
 	 */
-	fun current(): Value {
+	private fun current(): Value {
 		hist.offer(newVal())
 
 		// - `return` is mandatory if the method is defined as a block
@@ -104,22 +122,21 @@ class Stock(val name: String) {
 	/**
 	 * Calculates the current stock advice
 	 */
-	fun advice(): Advice =
+	private fun advice(): Advice =
 			Advice.values().get(jc.ThreadLocalRandom.current().nextInt(0, Advice.values().size()))
 
 	/**
 	 * Returns the historical average
 	 */
-	// - Functional style: the program is an equation to be "solved".
-	fun avg(): Double =
-			// - What _is_ the average? It is the division by its size of
-			//     (the sum of
-			//       (the map
-			//         of the historical data
-			//         on its numerical value
-			//       )
-			//     )
-			hist.map { it.num }.sum() / hist.size()
+	fun avg() =
+		// - What _is_ the average? It is the division by its size of
+		//     (the sum of
+		//       (the map
+		//         of the historical data
+		//         on its numerical value
+		//       )
+		//     )
+		hist.map { it.num }.sum() / hist.size()
 }
 
 /**
@@ -137,48 +154,36 @@ enum class Advice {
 	BUY, SELL, KEEP
 }
 
-// - _Functional monadic I/O_: let's _define_ a representation of our program  as a "special" equation
-//                             both marked as using I/O and allowed to used it.
+// - _Functional monadic async_: let's _define_ a representation of our program as a "special" equation
+//                               both marked as performing async actions and compositions and allowed to used it.
 // - Monadic programs are essentially _async_ and _lazy_ and usually implemented in libraries so
 //   they are extremely difficult to debug with regular tools.
 
 // - Monads creep into signatures because they are meant to "mark" programs, they are _infectious_.
-public fun subProgram(it: Triple<Double, Value, Advice>): LazyLineStdIOMonad<Unit> {
-	return LazyLineStdIOMonad.Native.printLine("The historical average is: ${it.first}").ioSemiColon { _ ->
-		LazyLineStdIOMonad.Native.printLine("The current value is: ${it.second}").ioSemiColon { _ ->
-			LazyLineStdIOMonad.Native.printLine("The current advice is: ${it.third}")
-		}
-	}
-}
-
 public fun main(args: Array<String>) {
-	println("Defining monadic program...")
 
-	val ioProgram =
-			// - Monadic `flatMap` or `bind`
-			LazyLineStdIOMonad.start().ioSemiColon {
-				LazyLineStdIOMonad.Native.print("Insert the stock name: ").ioSemiColon {
-					LazyLineStdIOMonad.Native.readLine()
-							// - Monadic `map`
-							.pipeThrough {
-								Stock.find(it) ?: Stock.default
-							}
-							// - If our functional equation solver was smart enough (and our language restricted enough
-							//   not to exhibit unexpected stateful interactions (probably purely functional),
-							//   _it could in theory figure out that the 3 values are independent and can be computed concurrently_:
-							.pipeThrough {
-								Triple (
-									it.avg(),
-									it.current(),
-									it.advice())
-							}
-							// - Kotlin fuctions can be used as lambdas
-							.ioSemiColon(::subProgram)
-				}
-			}
+	print("Insert the stock name: ")
 
-	// - Let's run our "impure" I/O program on our "impure" evaluation engine that supports "impure" native I/O functions.
-	println("...Monadic program defined, executing it.")
+	val sName = readLine() ?: "goog"
 
-	LazyLineStdIOMonad.End.run(ioProgram)
+	println("Defining and submitting the monadic async program...")
+
+	// - Let's use Java 8's `CompletableFuture` to model our monadic async program.
+	Stock.findAsync(sName)
+		// - Monadic `flatMap` or `bind`
+		.thenComposeAsync<Unit>(Function {
+			// - We'll create 3 "concurrent" async monads now.
+			val calcAvg = Stock.avgAsync(it)
+			val calcNext = Stock.currentAsync(it)
+			val calcAdvice = Stock.adviceAsync(it)
+			// - We'll compose them with `allOf` and then use `thenApply` or monadic `map` to print the results.
+			CompletableFuture.allOf(calcAvg, calcNext, calcAdvice).thenApply(Function {
+				println("The historical average is: ${calcAvg.join()}")
+				println("The current value is: ${calcNext.join()}")
+				println("The current advice is: ${calcAdvice.join()}")
+			})
+		})
+
+	// 3) No need for run, will start immediately. But let's say we have submitted.
+	println("...Submitted!")
 }
