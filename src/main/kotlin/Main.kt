@@ -1,8 +1,8 @@
 // - Semicolons are optional in Kotlin.
 import java.util.*
 
-// - Kotlin support _import bindings_.
-// - "import" can be used for all sorts of inputs (package, class, object etc.).
+// - Kotlin supports _import bindings_.
+// - "import" can be used for all sorts of entities (package, class, object etc.).
 import java.util.concurrent as jc
 
 import com.google.common.collect.EvictingQueue
@@ -17,13 +17,14 @@ import kotlin.concurrent.thread
 /**
  * Stock
  */
-// - Kotlin _primary constructor_ is part of the class header and can specify `val` or `var` to
+// - Kotlin-s _primary constructor_ is part of the class header and can specify `val` or `var` to
 //   create corresponding mutable or immutable _properties_ resp.: no boilerplate assignments are
 //   necessary.
 class Stock(val name: String) {
 
-	// - Kotlin supports singletons directly as _literal objects_ and _companion objects_ are a special case
+	// - Kotlin supports singletons directly as _literal objects_ and actually _companion objects_ are just a special case
 	//   that can be referred through the enclosing class' identifier.
+	// - Companion object methods and properties can be used as an equivalent of Java's _static_.
 	// - Singleton objects are full-blown objects: they can inherit, implement and define properties and methods.
 	companion object {
 
@@ -37,7 +38,6 @@ class Stock(val name: String) {
 		/**
 		 * Finds a stock by name. The current example implementation just constructs and caches Stock objects.
 		 */
-		// - Companion object methods and properties can be used as an equivalent of Java's _static_.
 		// - Methods can be defined as a single expression rather than a block, in this case the return type is optional.
 		// - Method parameters can also have default values.
 		fun find(name: String = "goog") =
@@ -101,7 +101,7 @@ class Stock(val name: String) {
 	 * Returns the historical average
 	 */
 	fun avg(): Double {
-		// Mutable local
+		// - Mutable local
 		var sum = 0.0
 		for (i in hist)
 			sum += i.num
@@ -135,20 +135,20 @@ public fun main(args: Array<String>) {
 	// - After getting the stock name we can look it up.
 	// - Method parameters can be passed by name.
 	val sMaybe = Stock.find ( name =
-	if (sNameMaybe == null)
-		"goog"
-	else
-		// - In this `else` branch Kotlin will autocast String? -> String.
-		// - This works only with immutables because mutables can be changed after the check.
-		// - There is a more compact syntax for this null-check, the "elvis" expression.
-		sNameMaybe
-	)
+		if (sNameMaybe == null)
+			"goog"
+		else
+			// - In this `else` branch Kotlin will autocast String? -> String.
+			// - This works only with immutables because mutables can be changed after the check.
+			// - There is a more compact syntax for this null-check, the "elvis" expression.
+			sNameMaybe
+		)
 	val s = (if (sMaybe == null) Stock.default else sMaybe)
 
 	// - We'll now use _threads_ and _channels_ to retrieve the stock information concurrently.
 
 	// - Quasar channels are just like Go channels.
-	// - We-re using channels without buffer, so they synchronize producers and consumers.
+	// - In this case we're using channels without buffer, so they synchronize producers and consumers.
 	// - Channels with buffers decouple them up to the buffer size.
 	// - When a buffer is full, the channel can be configured to throw an exception, drop the oldest value or block.
 	// - Channels can also be created to accept multiple consumers and/or producers.
@@ -158,11 +158,11 @@ public fun main(args: Array<String>) {
 
 	// - Threads are virtual sequential machines executing a body.
 	// - Threads can be _spawned_ and _joined_ (= awaited for termination).
-	// - The `thread` higher-order function/DSL is part of the Kotlin stdlib and uses regular JVM threads.
+	// - In this case we use the `thread` higher-order function, part of the Kotlin stdlib and uses regular JVM threads.
 	// - The JVM implements threads as general-purpose OS threads, which wake up fast from I/O but not
-	//   from synchronization and are heavy on resources. This means they're not ideal for fine-grained
-	//   concurrency.
-	// - Each thread will retrieve an information about the stock and will output it on a dedicated
+	//   from synchronization and are heavy on resources, so you can have at most few 1000s. This means they may not
+	//   be ideal for fine-grained concurrency.
+	// - Each thread will retrieve a single information about the stock and will output it on a dedicated
 	//   result channel.
 	thread {
 		avgResultChannel.send(s.avg())
@@ -176,11 +176,12 @@ public fun main(args: Array<String>) {
 
 	// - We'll join the stock information threads from the main thread by performing a potentially
 	//   thread-blocking `receive` operation from each result channel.
+	// - Quasar channels _can also be used with regular threads_.
 	val avg = avgResultChannel.receive()
 	val v = valueResultChannel.receive()
 	val advice = adviceResultChannel.receive()
 
-	// - We'll do so directly in Kotlin's _string templates_.
+	// - We'll just output them directly using Kotlin's _string templates_.
 	println("The historical average is: $avg")
 	println("The current value is: $v")
 	println("The current advice is: $advice")
