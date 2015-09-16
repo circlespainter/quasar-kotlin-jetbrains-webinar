@@ -2,8 +2,8 @@
 import java.util.*
 
 // - Kotlin support _import bindings_.
+// - "import" can be used for all sorts of inputs (package, class, object etc.).
 import java.util.concurrent as jc
-import java.util.function.*
 
 import com.google.common.collect.EvictingQueue
 
@@ -11,17 +11,10 @@ import co.paralleluniverse.strands.*
 import co.paralleluniverse.strands.channels.*
 import co.paralleluniverse.fibers.*
 import co.paralleluniverse.fibers.futures.AsyncCompletionStage
-import co.paralleluniverse.kotlin.Actor
-import co.paralleluniverse.kotlin.Receive
 import co.paralleluniverse.kotlin.fiber
-import co.paralleluniverse.kotlin.select
-import co.paralleluniverse.strands.dataflow.Val
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.ThreadLocalRandom
-
-// - "import" can be used for all sorts of inputs (package, class, object etc.).
-import java.util.concurrent.TimeUnit.*
 
 import kotlin.concurrent.thread
 
@@ -128,15 +121,13 @@ class Stock(val name: String) {
 	/**
 	 * Returns the historical average
 	 */
-	fun avg() =
-		// - What _is_ the average? It is the division by its size of
-		//     (the sum of
-		//       (the map
-		//         of the historical data
-		//         on its numerical value
-		//       )
-		//     )
-		hist.map { it.num }.sum() / hist.size()
+	fun avg(): Double {
+		// Mutable local
+		var sum = 0.0
+		for (i in hist)
+			sum += i.num
+		return sum / hist.size()
+	}
 }
 
 /**
@@ -154,36 +145,59 @@ enum class Advice {
 	BUY, SELL, KEEP
 }
 
-// - _Functional monadic async_: let's _define_ a representation of our program as a "special" equation
-//                               both marked as performing async actions and compositions and allowed to used it.
-// - Monadic programs are essentially _async_ and _lazy_ and usually implemented in libraries so
-//   they are extremely difficult to debug with regular tools.
+// - Kotlin _extension functions_ allow adding functionality to classes whose source are not under our control (libs).
+// - They are _statically dispatched_.
+// - We'll convert slow, async `CompletableFuture`-based operation into _fiber-blocking_ ones.
+Suspendable fun <T> CompletionStage<T>.fiberBlocking() =
+		AsyncCompletionStage.get(this)
 
-// - Monads creep into signatures because they are meant to "mark" programs, they are _infectious_.
 public fun main(args: Array<String>) {
 
 	print("Insert the stock name: ")
-
 	val sName = readLine() ?: "goog"
 
-	println("Defining and submitting the monadic async program...")
+	// - Suppose we have to retrieve stock information from a slow and far system (see above).
+	// - Also suppose that our system will serve many concurrent stock information requests.
+	// ==> We want to use fibers, of which we can have millions, rather than threads, of which we can only have few 1000s.
+	// - Fibers can _yield a result_ when joined, so we don't need result channels in this case.
+	// - Fibers are just like threads, _debugging included_.
 
-	// - Let's use Java 8's `CompletableFuture` to model our monadic async program.
-	Stock.findAsync(sName)
-		// - Monadic `flatMap` or `bind`
-		.thenComposeAsync<Unit>(Function {
-			// - We'll create 3 "concurrent" async monads now.
-			val calcAvg = Stock.avgAsync(it)
-			val calcNext = Stock.currentAsync(it)
-			val calcAdvice = Stock.adviceAsync(it)
-			// - We'll compose them with `allOf` and then use `thenApply` or monadic `map` to print the results.
-			CompletableFuture.allOf(calcAvg, calcNext, calcAdvice).thenApply(Function {
-				println("The historical average is: ${calcAvg.join()}")
-				println("The current value is: ${calcNext.join()}")
-				println("The current advice is: ${calcAdvice.join()}")
-			})
-		})
+	val res = fiber {
+		val s = (Stock.findAsync(sName).fiberBlocking() ?: Stock.default)
 
-	// 3) No need for run, will start immediately. But let's say we have submitted.
-	println("...Submitted!")
+		// - Let's store the references to the 3 concurrent fibers in a new _Triple_ immutable data class (from Kotlin's stdlib).
+		val running = Triple (
+				fiber {
+					println("Fiber getting the AVG started...")
+					val ret = Stock.avgAsync(s).fiberBlocking()
+					println("...Fiber got the AVG.")
+					ret
+				},
+				fiber {
+					println("Fiber getting the VALUE started...")
+					val ret = Stock.currentAsync(s).fiberBlocking()
+					println("...Fiber got the VALUE.")
+					ret
+				},
+				fiber {
+					println("Fiber getting the ADVICE started...")
+					val ret = Stock.adviceAsync(s).fiberBlocking()
+					println("...Fiber got the ADVICE.")
+					ret
+				}
+		)
+
+		// - Let's also store the results obtained by joining the fibers in a new _Triple_ and let's return it
+		//   to the main thread as the result of the lookup fiber.
+		Triple(running.first.get(), running.second.get(), running.third.get())
+	}.get() // - We're letting the main thread and the lookup fiber _inter-operate_ and _synchronize_ as just two
+	//   different types of _strands_.
+
+	// - `Triple` and `Pair` have convenient typed accessor methods.
+	// - All data classes have `componentX` accessor methods.
+	// - Data classes can also be de-structured in a type-safe way through multiple assignment.
+	val (avg, _ignored1, _ignored2) = res
+	println("The historical average is: $avg")
+	println("The current value is: ${res.component2()}")
+	println("The current advice is: ${res.third}")
 }
