@@ -138,9 +138,9 @@ public fun main(args: Array<String>) {
 	if (sNameMaybe == null)
 		"goog"
 	else
-	// - In this `else` branch Kotlin will autocast String? -> String.
-	// - This works only with immutables because mutables can be changed after the check.
-	// - There is a more compact syntax for this null-check, the "elvis" expression.
+		// - In this `else` branch Kotlin will autocast String? -> String.
+		// - This works only with immutables because mutables can be changed after the check.
+		// - There is a more compact syntax for this null-check, the "elvis" expression.
 		sNameMaybe
 	)
 	val s = (if (sMaybe == null) Stock.default else sMaybe)
