@@ -10,11 +10,7 @@ import com.google.common.collect.EvictingQueue
 import co.paralleluniverse.strands.*
 import co.paralleluniverse.strands.channels.*
 import co.paralleluniverse.fibers.*
-import co.paralleluniverse.fibers.futures.AsyncCompletionStage
 import co.paralleluniverse.kotlin.fiber
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.CompletionStage
-import java.util.concurrent.ThreadLocalRandom
 
 import kotlin.concurrent.thread
 
@@ -31,7 +27,7 @@ class Stock(val name: String) {
 	// - Singleton objects are full-blown objects: they can inherit, implement and define properties and methods.
 	companion object {
 
-		// - Kotlin is strongly types but has extensive type inference,
+		// - Kotlin is strongly typed but has extensive type inference,
 		//   although explicit typing for signatures is required.
 		private val HISTORY_WINDOW_SIZE = 10
 
@@ -42,9 +38,9 @@ class Stock(val name: String) {
 		 * Finds a stock by name. The current example implementation just constructs and caches Stock objects.
 		 */
 		// - Companion object methods and properties can be used as an equivalent of Java's _static_.
-		// - Methods can be defined by an expression, in this case the return type is optional.
+		// - Methods can be defined as a single expression rather than a block, in this case the return type is optional.
 		// - Method parameters can also have default values.
-		private fun find(name: String = "goog") =
+		fun find(name: String = "goog") =
 				// - Kotlin supports higher-order functions.
 				// - If the last parameter is a function, a DSL-like block-based syntax can be used.
 				// - A _lambda_, or _function literal_, has the form `{ (param1[:Type1], ...) -> BODY }` and
@@ -54,23 +50,6 @@ class Stock(val name: String) {
 					Stock(name)
 				}
 		private val cache = jc.ConcurrentHashMap<String, Stock>()
-
-		// - We'll simulate a slow system with threads that will wait up to 3 seconds to answer our inquiry
-		private val MAX_WAIT_MILLIS: Long = 3000
-		private fun <I, O> slowAsyncVal(s: I, f: (I) -> O): CompletableFuture<O> {
-			val ret = CompletableFuture<O>()
-			thread {
-				Strand.sleep(ThreadLocalRandom.current().nextLong(0, MAX_WAIT_MILLIS))
-				ret.complete(f(s))
-			}
-			return ret
-		}
-		fun findAsync(s: String) = slowAsyncVal(s) { Stock.find(it) ?: Stock.default }
-		fun avgAsync(s: Stock) = slowAsyncVal(s) {
-			it.avg()
-		}
-		fun currentAsync(s: Stock) = slowAsyncVal(s) { it.current() }
-		fun adviceAsync(s: Stock) = slowAsyncVal(s) { it.advice() }
 	}
 
 	/**
@@ -91,7 +70,7 @@ class Stock(val name: String) {
 	// - Kotlin has _`public`_, _`private`_, _`protected`_ and _`internal`_ (default) visibility.
 	private fun newVal(): Value =
 			Value (
-					// - Many Kotlin constructs, like "if", can be used both as statements and as expressions.
+					// - Many Kotlin constructs, like `if`, can be used both as statements and as expressions.
 					if (hist.isEmpty())
 						jc.ThreadLocalRandom.current().nextDouble()
 					else {
@@ -105,7 +84,7 @@ class Stock(val name: String) {
 	/**
 	 * Calculates the current stock value
 	 */
-	private fun current(): Value {
+	fun current(): Value {
 		hist.offer(newVal())
 
 		// - `return` is mandatory if the method is defined as a block
@@ -115,7 +94,7 @@ class Stock(val name: String) {
 	/**
 	 * Calculates the current stock advice
 	 */
-	private fun advice(): Advice =
+	fun advice(): Advice =
 			Advice.values().get(jc.ThreadLocalRandom.current().nextInt(0, Advice.values().size()))
 
 	/**
@@ -145,59 +124,64 @@ enum class Advice {
 	BUY, SELL, KEEP
 }
 
-// - Kotlin _extension functions_ allow adding functionality to classes whose source are not under our control (libs).
-// - They are _statically dispatched_.
-// - We'll convert slow, async `CompletableFuture`-based operation into _fiber-blocking_ ones.
-Suspendable fun <T> CompletionStage<T>.fiberBlocking() =
-		AsyncCompletionStage.get(this)
-
 public fun main(args: Array<String>) {
-
 	print("Insert the stock name: ")
-	val sName = readLine() ?: "goog"
 
-	// - Suppose we have to retrieve stock information from a slow and far system (see above).
-	// - Also suppose that our system will serve many concurrent stock information requests.
-	// ==> We want to use fibers, of which we can have millions, rather than threads, of which we can only have few 1000s.
-	// - Fibers can _yield a result_ when joined, so we don't need result channels in this case.
-	// - Fibers are just like threads, _debugging included_.
+	// - Kotlin aims at eliminating `NullPointerException`s and to this end it has has _nullable_
+	//   and _non-nullable_ types as well as _platform_ types for values produced by Java code.
+	// - A _nullable reference_ is suffixed by a "?" (question mark).
+	val sNameMaybe: String? = readLine()
 
-	val res = fiber {
-		val s = (Stock.findAsync(sName).fiberBlocking() ?: Stock.default)
+	// - After getting the stock name we can look it up.
+	// - Method parameters can be passed by name.
+	val sMaybe = Stock.find ( name =
+	if (sNameMaybe == null)
+		"goog"
+	else
+	// - In this `else` branch Kotlin will autocast String? -> String.
+	// - This works only with immutables because mutables can be changed after the check.
+	// - There is a more compact syntax for this null-check, the "elvis" expression.
+		sNameMaybe
+	)
+	val s = (if (sMaybe == null) Stock.default else sMaybe)
 
-		// - Let's store the references to the 3 concurrent fibers in a new _Triple_ immutable data class (from Kotlin's stdlib).
-		val running = Triple (
-				fiber {
-					println("Fiber getting the AVG started...")
-					val ret = Stock.avgAsync(s).fiberBlocking()
-					println("...Fiber got the AVG.")
-					ret
-				},
-				fiber {
-					println("Fiber getting the VALUE started...")
-					val ret = Stock.currentAsync(s).fiberBlocking()
-					println("...Fiber got the VALUE.")
-					ret
-				},
-				fiber {
-					println("Fiber getting the ADVICE started...")
-					val ret = Stock.adviceAsync(s).fiberBlocking()
-					println("...Fiber got the ADVICE.")
-					ret
-				}
-		)
+	// - We'll now use _threads_ and _channels_ to retrieve the stock information concurrently.
 
-		// - Let's also store the results obtained by joining the fibers in a new _Triple_ and let's return it
-		//   to the main thread as the result of the lookup fiber.
-		Triple(running.first.get(), running.second.get(), running.third.get())
-	}.get() // - We're letting the main thread and the lookup fiber _inter-operate_ and _synchronize_ as just two
-	//   different types of _strands_.
+	// - Quasar channels are just like Go channels.
+	// - We-re using channels without buffer, so they synchronize producers and consumers.
+	// - Channels with buffers decouple them up to the buffer size.
+	// - When a buffer is full, the channel can be configured to throw an exception, drop the oldest value or block.
+	// - Channels can also be created to accept multiple consumers and/or producers.
+	val avgResultChannel = Channels.newChannel<Double>(0);
+	val valueResultChannel = Channels.newChannel<Value>(0);
+	val adviceResultChannel = Channels.newChannel<Advice>(0);
 
-	// - `Triple` and `Pair` have convenient typed accessor methods.
-	// - All data classes have `componentX` accessor methods.
-	// - Data classes can also be de-structured in a type-safe way through multiple assignment.
-	val (avg, _ignored1, _ignored2) = res
+	// - Threads are virtual sequential machines executing a body.
+	// - Threads can be _spawned_ and _joined_ (= awaited for termination).
+	// - The `thread` higher-order function/DSL is part of the Kotlin stdlib and uses regular JVM threads.
+	// - The JVM implements threads as general-purpose OS threads, which wake up fast from I/O but not
+	//   from synchronization and are heavy on resources. This means they're not ideal for fine-grained
+	//   concurrency.
+	// - Each thread will retrieve an information about the stock and will output it on a dedicated
+	//   result channel.
+	thread {
+		avgResultChannel.send(s.avg())
+	}
+	thread {
+		valueResultChannel.send(s.current())
+	}
+	thread {
+		adviceResultChannel.send(s.advice())
+	}
+
+	// - We'll join the stock information threads from the main thread by performing a potentially
+	//   thread-blocking `receive` operation from each result channel.
+	val avg = avgResultChannel.receive()
+	val v = valueResultChannel.receive()
+	val advice = adviceResultChannel.receive()
+
+	// - We'll do so directly in Kotlin's _string templates_.
 	println("The historical average is: $avg")
-	println("The current value is: ${res.component2()}")
-	println("The current advice is: ${res.third}")
+	println("The current value is: $v")
+	println("The current advice is: $advice")
 }
