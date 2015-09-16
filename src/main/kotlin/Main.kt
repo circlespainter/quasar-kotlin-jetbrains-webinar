@@ -2,7 +2,7 @@
 import java.util.*
 
 // - Kotlin supports _import bindings_.
-// - "import" can be used for all sorts of entities (package, class, object etc.).
+// - The `import` keyword can be used for all sorts of entities (package, class, object etc.).
 import java.util.concurrent as jc
 
 import com.google.common.collect.EvictingQueue
@@ -17,9 +17,11 @@ import kotlin.concurrent.thread
 /**
  * Stock
  */
-// - Kotlin-s _primary constructor_ is part of the class header and can specify `val` or `var` to
+// - Kotlin's _primary constructor_ is part of the class header and can specify `val` or `var` to
 //   create corresponding mutable or immutable _properties_ resp.: no boilerplate assignments are
 //   necessary.
+// - Kotlin classes and methods are _closed for extension_ by default and can be made inheritable/overridable through
+//   the `open` keyword.
 class Stock(val name: String) {
 
 	// - Kotlin supports singletons directly as _literal objects_ and actually _companion objects_ are just a special case
@@ -28,17 +30,16 @@ class Stock(val name: String) {
 	// - Singleton objects are full-blown objects: they can inherit, implement and define properties and methods.
 	companion object {
 
-		// - Kotlin is strongly typed but has extensive type inference,
-		//   although explicit typing for signatures is required.
+		// - Kotlin is strongly typed but has extensive type inference.
 		private val HISTORY_WINDOW_SIZE = 10
 
-		// - There's no "new" keyword in Kotlin, constructors are called simply through the class name.
+		// - There's no `new` keyword in Kotlin, constructors are called simply through the class name.
 		val default = Stock("whatever")
 
 		/**
 		 * Finds a stock by name. The current example implementation just constructs and caches Stock objects.
 		 */
-		// - Methods can be defined as a single expression rather than a block, in this case the return type is optional.
+		// - Methods can be defined as a single expression rather than a block.
 		// - Method parameters can also have default values.
 		fun find(name: String = "goog") =
 				// - Kotlin supports higher-order functions.
@@ -67,7 +68,7 @@ class Stock(val name: String) {
 	/**
 	 * Generates a new stock value
 	 */
-	// - Kotlin has _`public`_, _`private`_, _`protected`_ and _`internal`_ (default) visibility.
+	// - Kotlin has _`public`_, _`private`_, _`protected`_ and _`internal`_ (whichs is the default) visibility.
 	private fun newVal(): Value =
 			Value (
 					// - Many Kotlin constructs, like `if`, can be used both as statements and as expressions.
@@ -129,7 +130,7 @@ public fun main(args: Array<String>) {
 
 	// - Kotlin aims at eliminating `NullPointerException`s and to this end it has has _nullable_
 	//   and _non-nullable_ types as well as _platform_ types for values produced by Java code.
-	// - A _nullable reference_ is suffixed by a "?" (question mark).
+	// - A _nullable reference type_ is suffixed by a "?" (question mark).
 	val sNameMaybe: String? = readLine()
 
 	// - After getting the stock name we can look it up.
@@ -157,11 +158,10 @@ public fun main(args: Array<String>) {
 	val adviceResultChannel = Channels.newChannel<Advice>(0);
 
 	// - Threads are virtual sequential machines executing a body.
-	// - Threads can be _spawned_ and _joined_ (= awaited for termination).
+	// - Threads can be _spawned_ from other threads and _joined_ (= awaited for termination) by other threads.
 	// - In this case we use the `thread` higher-order function, part of the Kotlin stdlib and uses regular JVM threads.
-	// - The JVM implements threads as general-purpose OS threads, which wake up fast from I/O but not
-	//   from synchronization and are heavy on resources, so you can have at most few 1000s. This means they may not
-	//   be ideal for fine-grained concurrency.
+	// - In turn the JVM implements threads using general-purpose OS threads, which are heavy on resources, so you can
+	//   have at most few 1000s. This means they may not be ideal for fine-grained concurrency.
 	// - Each thread will retrieve a single information about the stock and will output it on a dedicated
 	//   result channel.
 	thread {
@@ -181,7 +181,7 @@ public fun main(args: Array<String>) {
 	val v = valueResultChannel.receive()
 	val advice = adviceResultChannel.receive()
 
-	// - We'll just output them directly using Kotlin's _string templates_.
+	// - We'll just output them directly using Kotlin's _string templates_ which are very convenient.
 	println("The historical average is: $avg")
 	println("The current value is: $v")
 	println("The current advice is: $advice")
