@@ -3,17 +3,8 @@
 // - "import" can be used for all sorts of inputs (package, class, object etc.).
 
 import com.google.common.collect.EvictingQueue
-
-import co.paralleluniverse.strands.*
-import co.paralleluniverse.fibers.*
-import co.paralleluniverse.fibers.futures.AsyncCompletionStage
-import co.paralleluniverse.strands.dataflow.Val
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.CompletionStage
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ThreadLocalRandom
-
-import kotlin.concurrent.thread
 
 /**
  * Stock
@@ -41,7 +32,7 @@ class Stock(val name: String) {
         // - Companion object methods and properties can be used as an equivalent of Java's _static_.
         // - Methods can be defined by an expression, in this case the return type is optional.
         // - Method parameters can also have default values.
-        private fun find(name: String = "goog") =
+        fun find(name: String = "goog") =
                 // - Kotlin supports higher-order functions.
                 // - If the last parameter is a function, a DSL-like block-based syntax can be used.
                 // - A _lambda_, or _function literal_, has the form `{ (param1[:Type1], ...) -> BODY }` and
@@ -51,23 +42,6 @@ class Stock(val name: String) {
                     Stock(name)
                 }
         private val cache = ConcurrentHashMap<String, Stock>()
-
-        // - We'll simulate a slow system with threads that will wait up to 3 seconds to answer our inquiry
-        private val MAX_WAIT_MILLIS: Long = 3000
-        private fun <I, O> slowAsyncVal(s: I, f: (I) -> O): CompletableFuture<O> {
-            val ret = CompletableFuture<O>()
-            thread {
-                Strand.sleep(ThreadLocalRandom.current().nextLong(0, MAX_WAIT_MILLIS))
-                ret.complete(f(s))
-            }
-            return ret
-        }
-        fun findAsync(s: String) = slowAsyncVal(s) { Stock.find(it) ?: Stock.default }
-        fun avgAsync(s: Stock) = slowAsyncVal(s) {
-            it.avg()
-        }
-        fun currentAsync(s: Stock) = slowAsyncVal(s) { it.current() }
-        fun adviceAsync(s: Stock) = slowAsyncVal(s) { it.advice() }
     }
 
     /**
@@ -102,7 +76,7 @@ class Stock(val name: String) {
     /**
      * Calculates the current stock value
      */
-    private fun current(): Value {
+    fun current(): Value {
         hist.offer(newVal())
 
         // - `return` is mandatory if the method is defined as a block
@@ -112,19 +86,22 @@ class Stock(val name: String) {
     /**
      * Calculates the current stock advice
      */
-    private fun advice(): Advice =
+    fun advice(): Advice =
             Advice.values()[ThreadLocalRandom.current().nextInt(0, Advice.values().size)]
 
     /**
      * Returns the historical average
      */
-    fun avg(): Double {
-        // Mutable local
-        var sum = 0.0
-        for (i in hist)
-            sum += i.num
-        return sum / hist.size
-    }
+    // - Functional style: the program is an equation to be "solved".
+    fun avg(): Double =
+            // - What _is_ the average? It is the division by its size of
+            //     (the sum of
+            //       (the map
+            //         of the historical data
+            //         on its numerical value
+            //       )
+            //     )
+            hist.map { it.num }.sum() / hist.size
 }
 
 /**
@@ -142,58 +119,48 @@ enum class Advice {
     BUY, SELL, KEEP
 }
 
-// - Kotlin _extension functions_ allow adding functionality to classes whose source are not under our control (libs).
-// - They are _statically dispatched_.
-// - We'll convert slow, async `CompletableFuture`-based operation into _fiber-blocking_ ones.
-@Suspendable fun <T> CompletionStage<T>.fiberBlocking() = AsyncCompletionStage.get(this)
+// - _Functional monadic I/O_: let's _define_ a representation of our program  as a "special" equation
+//                             both marked as using I/O and allowed to used it.
+// - Monadic programs are essentially _async_ and _lazy_ and usually implemented in libraries so
+//   they are extremely difficult to debug with regular tools.
 
-// - Convenient shortcut
-private fun <R> kval(b: () -> R): Val<R> =
-        Val(SuspendableCallable<R> { b() })
+// - Monads creep into signatures because they are meant to "mark" programs, they are _infectious_.
+fun subProgram(it: Triple<Double, Value, Advice>): LazyLineStdIOMonad<Unit> {
+    return LazyLineStdIOMonad.Native.printLine("The historical average is: ${it.first}").ioSemiColon { _ignored ->
+        LazyLineStdIOMonad.Native.printLine("The current value is: ${it.second}").ioSemiColon { _ignored ->
+            LazyLineStdIOMonad.Native.printLine("The current advice is: ${it.third}")
+        }
+    }
+}
 
 fun main(args: Array<String>) {
+    println("Defining monadic program...")
 
-    print("Insert the stock name: ")
-    val sName = readLine() ?: "goog"
+    val ioProgram =
+            // - Monadic `flatMap` or `bind`
+            LazyLineStdIOMonad.start().ioSemiColon {
+                LazyLineStdIOMonad.Native.print("Insert the stock name: ").ioSemiColon {
+                    LazyLineStdIOMonad.Native.readLine()
+                            // - Monadic `map`
+                            .pipeThrough {
+                                Stock.find(it) ?: Stock.default
+                            }
+                            // - If our functional equation solver was smart enough (and our language restricted enough
+                            //   not to exhibit unexpected stateful interactions (probably purely functional),
+                            //   _it could in theory figure out that the 3 values are independent and can be computed concurrently_:
+                            .pipeThrough {
+                                Triple (
+                                        it.avg(),
+                                        it.current(),
+                                        it.advice())
+                            }
+                            // - Kotlin fuctions can be used as lambdas
+                            .ioSemiColon(::subProgram)
+                }
+            }
 
-    // - Dataflow: let's build a network of computations with a single output each (or an error).
-    // - Dataflow nodes can be `Val` (write-once) or `Var` (always mutable).
-    // - A Dataflow program is similar to a "concurrent spreadsheet".
-    // - The network's "arcs" are the value dependencies between the nodes: some nodes can block waiting on the output
-    //   of other nodes before proceeding.
-    // - Quasar will implement dataflow nodes with fibers (by default).
+    // - Let's run our "impure" I/O program on our "impure" evaluation engine that supports "impure" native I/O functions.
+    println("...Monadic program defined, executing it.")
 
-    // - There's 1 "initial" and "inert" node, its value is provided by the main thread. The "middle node" awaits its output.
-    val stockNameVal = Val<String>()
-
-    // - There's 1 "middle" node reading from the "initial" node. It will output the result of the stock search.
-    val stockVal = kval { Stock.findAsync(stockNameVal.get()).fiberBlocking() }
-
-    // - There are 3 "final" nodes reading from the "middle" node. Each of them will output a single stock information.
-    val stockAvgVal = kval {
-        println("Dataflow Val getting the AVG waiting for the stock...")
-        val ret = Stock.avgAsync(stockVal.get()).fiberBlocking()
-        println("...Dataflow Val got the AVG, returning it")
-        ret
-    }
-    val stockNextVal = kval {
-        println("Dataflow Val getting the VALUE waiting for the stock...")
-        val ret = Stock.currentAsync(stockVal.get()).fiberBlocking()
-        println("...Dataflow Val got the VALUE, returning it")
-        ret
-    }
-    val stockAdviceVal = kval {
-        println("Dataflow Val getting the ADVICE waiting for the stock...")
-        val ret = Stock.adviceAsync(stockVal.get()).fiberBlocking()
-        println("...Dataflow Val got the ADVICE, returning it")
-        ret
-    }
-
-    // - The main thread kicks-off the network by providing the stock name.
-    stockNameVal.set(sName)
-
-    // - We'll "join" on the "final" nodes' output in order to print the stock information.
-    println("The historical average is: ${stockAvgVal.get()}")
-    println("The current value is: ${stockNextVal.get()}")
-    println("The current advice is: ${stockAdviceVal.get()}")
+    LazyLineStdIOMonad.End.run(ioProgram)
 }
