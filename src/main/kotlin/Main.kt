@@ -1,20 +1,17 @@
 // - Semicolons are optional in Kotlin.
 // - Kotlin support _import bindings_.
+// - "import" can be used for all sorts of inputs (package, class, object etc.).
 
 import com.google.common.collect.EvictingQueue
 
 import co.paralleluniverse.strands.*
 import co.paralleluniverse.fibers.*
 import co.paralleluniverse.fibers.futures.AsyncCompletionStage
-import co.paralleluniverse.kotlin.Actor
-import co.paralleluniverse.kotlin.fiber
+import co.paralleluniverse.strands.dataflow.Val
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ThreadLocalRandom
-
-// - "import" can be used for all sorts of inputs (package, class, object etc.).
-import java.util.concurrent.TimeUnit.*
 
 import kotlin.concurrent.thread
 
@@ -44,7 +41,7 @@ class Stock(val name: String) {
         // - Companion object methods and properties can be used as an equivalent of Java's _static_.
         // - Methods can be defined by an expression, in this case the return type is optional.
         // - Method parameters can also have default values.
-        private fun find(name: String = "goog"): Stock? =
+        private fun find(name: String = "goog") =
                 // - Kotlin supports higher-order functions.
                 // - If the last parameter is a function, a DSL-like block-based syntax can be used.
                 // - A _lambda_, or _function literal_, has the form `{ (param1[:Type1], ...) -> BODY }` and
@@ -150,80 +147,53 @@ enum class Advice {
 // - We'll convert slow, async `CompletableFuture`-based operation into _fiber-blocking_ ones.
 @Suspendable fun <T> CompletionStage<T>.fiberBlocking() = AsyncCompletionStage.get(this)
 
-/**
- * Creates an actor that will receive and print stock information
- */
-// - Actors have been made popular by Erlang to write fault-tolerant applications.
-// - Actors are a big topic and there's no time to cover it all so we'll see how to write one.
-// - A _Quasar-Kotlin actor_ is just like an Erlang actor: a sequential process that will run on a
-//   new fiber (by default, but it can run on any type of strand including _threads_).
-// - Spawned actors offer a _public handle_ or _ref_ that can be used to send them general or actor-type-specific messages.
-// - Actor refs can be passed around but they can also be stored in (and retrieved from) a global registry.
-// - Actors have only one _input channel_ (AKA _mailbox_) but they perform _selective receive_ operations.
-// - Notice that Kotlin allows _top-level functions and properties_.
-fun newActor() = object : Actor() {
-    override @Suspendable fun doRun() {
-        // - We'll perform 2 receives, _deferring_ the advice if it comes in first.
-        for (i in 1..2)
-            receive(60, SECONDS) {
-                when (it) {
-                    is Double -> println("The historical average is: $it")
-                    is Value -> println("The current value is: $it")
-                    is Timeout -> println("Timeout!!!") // Shouldn't happen
-                    else -> defer()
-                }
-            }
-
-        // - We'll then receive the advice.
-        receive(60, SECONDS) {
-            when (it) {
-                is Advice -> {
-                    println("The current advice is: $it")
-                    // - Kotlin allows _non-local returns_ from flow control constructs as well as from
-                    //   _inline higher-order functions_ (like Quasar-Kotlin's actor `receive`).
-                    // - We exit the actor as we don't have anything more to do.
-                    return
-                }
-                else -> println("Unexpected!!!") // Shouldn't happen
-            }
-        }
-
-        println("Never printed")
-    }
-}
+// - Convenient shortcut
+private fun <R> kval(b: () -> R): Val<R> =
+        Val(SuspendableCallable<R> { b() })
 
 fun main(args: Array<String>) {
 
     print("Insert the stock name: ")
     val sName = readLine() ?: "goog"
 
-    val actor = newActor()
-    val actorRef = actor.spawn() // The actor handle
+    // - Dataflow: let's build a network of computations with a single output each (or an error).
+    // - Dataflow nodes can be `Val` (write-once) or `Var` (always mutable).
+    // - A Dataflow program is similar to a "concurrent spreadsheet".
+    // - The network's "arcs" are the value dependencies between the nodes: some nodes can block waiting on the output
+    //   of other nodes before proceeding.
+    // - Quasar will implement dataflow nodes with fibers (by default).
 
-    fiber {
-        val s = Stock.findAsync(sName).fiberBlocking()
+    // - There's 1 "initial" and "inert" node, its value is provided by the main thread. The "middle node" awaits its output.
+    val stockNameVal = Val<String>()
 
-        // - We'll send once again each information on its return channel after obtaining it.
-        // - Notice that all Quasar abstractions can interact with each other as well as with regular threads.
-        fiber {
-            println("Fiber getting the AVG started...")
-            actorRef.send(Stock.avgAsync(s).fiberBlocking())
-            println("...Fiber got the AVG.")
-        }
-        fiber {
-            println("Fiber getting the VALUE started...")
-            actorRef.send(Stock.currentAsync(s).fiberBlocking())
-            println("...Fiber got the VALUE.")
-        }
-        fiber {
-            println("Fiber getting the ADVICE started...")
-            actorRef.send(Stock.adviceAsync(s).fiberBlocking())
-            println("...Fiber got the ADVICE.")
-        }
+    // - There's 1 "middle" node reading from the "initial" node. It will output the result of the stock search.
+    val stockVal = kval { Stock.findAsync(stockNameVal.get()).fiberBlocking() }
+
+    // - There are 3 "final" nodes reading from the "middle" node. Each of them will output a single stock information.
+    val stockAvgVal = kval {
+        println("Dataflow Val getting the AVG waiting for the stock...")
+        val ret = Stock.avgAsync(stockVal.get()).fiberBlocking()
+        println("...Dataflow Val got the AVG, returning it")
+        ret
+    }
+    val stockNextVal = kval {
+        println("Dataflow Val getting the VALUE waiting for the stock...")
+        val ret = Stock.currentAsync(stockVal.get()).fiberBlocking()
+        println("...Dataflow Val got the VALUE, returning it")
+        ret
+    }
+    val stockAdviceVal = kval {
+        println("Dataflow Val getting the ADVICE waiting for the stock...")
+        val ret = Stock.adviceAsync(stockVal.get()).fiberBlocking()
+        println("...Dataflow Val got the ADVICE, returning it")
+        ret
     }
 
-    // - We need to join only the actor from the main thread because it'll be last to finish.
-    // - If we don't join our program could terminate before the actor (and the fibers it receives data from) has
-    //   finished executing.
-    actor.join()
+    // - The main thread kicks-off the network by providing the stock name.
+    stockNameVal.set(sName)
+
+    // - We'll "join" on the "final" nodes' output in order to print the stock information.
+    println("The historical average is: ${stockAvgVal.get()}")
+    println("The current value is: ${stockNextVal.get()}")
+    println("The current advice is: ${stockAdviceVal.get()}")
 }
