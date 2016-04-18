@@ -3,7 +3,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:0.12.1230"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.0.1-2"
     }
 }
 
@@ -18,9 +18,11 @@ ext.classifier      = ':jdk8'
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
-ext.quasarVer       = '0.7.3'
+ext.quasarVer       = '0.7.5-SNAPSHOT'
 ext.logbackVer      = '1.1.3'
-ext.slf4jVer        = '1.7.12'
+ext.slf4jVer        = '1.7.21'
+
+ext.kotlinVer       = '1.0.1-2'
 
 [compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
 
@@ -39,8 +41,8 @@ configurations.all {
 repositories {
 //    mavenLocal()
     mavenCentral()
-//    maven { url "https://oss.sonatype.org/content/repositories/releases" }
-//    maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
+    maven { url "https://oss.sonatype.org/content/repositories/releases" }
+    maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
 //    maven { url 'https://maven.java.net/content/repositories/snapshots' }
 }
 
@@ -48,14 +50,19 @@ dependencies {
     compile "co.paralleluniverse:quasar-core:${quasarVer}${classifier}"
     compile "co.paralleluniverse:quasar-kotlin:${quasarVer}"
 
+    compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVer"
+    compile "org.jetbrains.kotlin:kotlin-reflect:$kotlinVer"
+
     quasar "co.paralleluniverse:quasar-core:${quasarVer}${classifier}@jar"
 
     runtime "ch.qos.logback:logback-classic:${logbackVer}"
 }
 
-mainClassName = '_DefaultPackage'
+mainClassName = 'MainKt'
 
 applicationDefaultJvmArgs = [
+    // "-Dco.paralleluniverse.fibers.verifyInstrumentation=true",
+    "-Dco.paralleluniverse.fibers.detectRunawayFibers=false",
     "-javaagent:${configurations.quasar.singleFile}" // =v, =d
 ]
 

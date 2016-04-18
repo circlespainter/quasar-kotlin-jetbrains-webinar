@@ -1,156 +1,185 @@
-import java.util.*
-import java.util.concurrent.*
+// - Semicolons are optional in Kotlin.
+// - Kotlin supports _import bindings_.
+// - The `import` keyword can be used for all sorts of entities (package, class, object etc.).
 
 import com.google.common.collect.EvictingQueue
 
-import co.paralleluniverse.strands.*
 import co.paralleluniverse.strands.channels.*
-import co.paralleluniverse.fibers.*
-import co.paralleluniverse.fibers.futures.AsyncCompletionStage
-import co.paralleluniverse.kotlin.Actor
-import co.paralleluniverse.kotlin.Receive
-import co.paralleluniverse.kotlin.fiber
-import co.paralleluniverse.kotlin.select
-import java.util.concurrent
-import java.util.function.Supplier
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ThreadLocalRandom
 
 import kotlin.concurrent.thread
 
-// Stock value type. Data class wrapping can work as type aliasing (with "branding") as well
+/**
+ * Stock
+ */
+// - Kotlin's _primary constructor_ is part of the class header and can specify `val` or `var` to
+//   create corresponding mutable or immutable _properties_ resp.: no boilerplate assignments are
+//   necessary.
+// - Kotlin classes and methods are _closed for extension_ by default and can be made inheritable/overridable through
+//   the `open` keyword.
+class Stock(val name: String) {
+
+    // - Kotlin supports singletons directly as _literal objects_ and actually _companion objects_ are just a special case
+    //   that can be referred through the enclosing class' identifier.
+    // - Companion object methods and properties can be used as an equivalent of Java's _static_.
+    // - Singleton objects are full-blown objects: they can inherit, implement and define properties and methods.
+    companion object {
+
+        // - Kotlin is strongly typed but has extensive type inference.
+        private val HISTORY_WINDOW_SIZE = 10
+
+        // - There's no `new` keyword in Kotlin, constructors are called simply through the class name.
+        val default = Stock("whatever")
+
+        /**
+         * Finds a stock by name. The current example implementation just constructs and caches Stock objects.
+         */
+        // - Methods can be defined as a single expression rather than a block.
+        // - Method parameters can also have default values.
+        fun find(name: String = "goog") =
+                // - Kotlin supports higher-order functions.
+                // - If the last parameter is a function, a DSL-like block-based syntax can be used.
+                // - A _lambda_, or _function literal_, has the form `{ (param1[:Type1], ...) -> BODY }` and
+                //   if there is only a single parameter the `{ BODY }` form can be used and the parameter
+                //   can be referred to as `it`.
+                cache.getOrPut(name) {
+                    Stock(name)
+                }
+
+        private val cache = ConcurrentHashMap<String, Stock>()
+    }
+
+    /**
+     * Sliding window for historical data
+     */
+    private val hist = EvictingQueue.create<Value>(HISTORY_WINDOW_SIZE)
+
+    // - Kotlin classes can have _initialization blocks_.
+    init {
+        // - Kotlin supports _dynamic ranges_.
+        for (i in 0..HISTORY_WINDOW_SIZE)
+            hist.offer(Value(newVal().num))
+    }
+
+    /**
+     * Generates a new stock value
+     */
+    // - Kotlin has _`public`_, _`private`_, _`protected`_ and _`internal`_ (whichs is the default) visibility.
+    private fun newVal(): Value =
+            Value (
+                    // - Many Kotlin constructs, like `if`, can be used both as statements and as expressions.
+                    if (hist.isEmpty())
+                        ThreadLocalRandom.current().nextDouble()
+                    else {
+                        // - Locals can be mutable or immutable too.
+                        val DEVIATION = 0.25
+                        val last = hist.last().num
+                        last + (last * ThreadLocalRandom.current().nextDouble(-DEVIATION, +DEVIATION))
+                    }
+            )
+
+    /**
+     * Calculates the current stock value
+     */
+    fun current(): Value {
+        hist.offer(newVal())
+
+        // - `return` is mandatory if the method is defined as a block
+        return hist.last()
+    }
+
+    /**
+     * Calculates the current stock advice
+     */
+    fun advice(): Advice =
+            Advice.values()[ThreadLocalRandom.current().nextInt(0, Advice.values().size)]
+
+    /**
+     * Returns the historical average
+     */
+    fun avg(): Double {
+        // - Mutable local
+        var sum = 0.0
+        for (i in hist)
+            sum += i.num
+        return sum / hist.size
+    }
+}
+
+/**
+ * Stock value
+ */
+// - For _data classes_ Kotlin will generate "toString", "equals", "hashCode" and a nice "copy" method with
+//   optional parameters to replace some of the properties during the copy.
 data class Value(val num: Double)
 
-// Types of Stock advice
+/**
+ * Stock Advice
+ */
+// - Kotlin _enum literals_ are _literal object instances_ of the _enum class_.
 enum class Advice {
-	BUY, SELL, KEEP
+    BUY, SELL, KEEP
 }
 
-// Our Stock
-class Stock(val name: String) {
-	// Default singleton
-	companion object  {
-		val HISTORY_WINDOW_SIZE = 10
+fun main(args: Array<String>) {
+    print("Insert the stock name: ")
 
-		val default = Stock("whatever")
+    // - Kotlin aims at eliminating `NullPointerException`s and to this end it has has _nullable_
+    //   and _non-nullable_ types as well as _platform_ types for values produced by Java code.
+    // - A _nullable reference type_ is suffixed by a "?" (question mark).
+    val sNameMaybe: String? = readLine()
 
-		// Let's start with some straightforward impl.
-		private val cache = ConcurrentHashMap<String, Stock>()
-		fun find(name: String): Stock? = cache.getOrPut(name, { Stock(name) })
-	}
+    // - After getting the stock name we can look it up.
+    // - Method parameters can be passed by name.
+    val sMaybe = Stock.find (name =
+        if (sNameMaybe == null)
+            "goog"
+        else
+        // - In this `else` branch Kotlin will autocast String? -> String.
+        // - This works only with immutables because mutables can be changed after the check.
+        // - There is a more compact syntax for this null-check, the "elvis" expression.
+            sNameMaybe
+    )
+    val s = if (sMaybe == null) Stock.default else sMaybe
 
-	// Sliding window for historical data
-	val hist = EvictingQueue.create<Value>(HISTORY_WINDOW_SIZE)
+    // - We'll now use _threads_ and _channels_ to retrieve the stock information concurrently.
 
-	// Let's fill the history
-	init {
-		for(i in 0..HISTORY_WINDOW_SIZE)
-			hist.offer(Value(newVal().num))
-	}
+    // - Quasar channels are just like Go channels.
+    // - In this case we're using channels without buffer, so they synchronize producers and consumers.
+    // - Channels with buffers decouple them up to the buffer size.
+    // - When a buffer is full, the channel can be configured to throw an exception, drop the oldest value or block.
+    // - Channels can also be created to accept multiple consumers and/or producers.
+    val avgResultChannel = Channels.newChannel<Double>(0);
+    val valueResultChannel = Channels.newChannel<Value>(0);
+    val adviceResultChannel = Channels.newChannel<Advice>(0);
 
-	// Random but not too far from the last one
-	// _Functional already!_ 100% expression (= equation to be reduced), bindings are just for readability's sake
-	private fun newVal(): Value =
-		Value (
-			if (hist.isEmpty())
-				ThreadLocalRandom.current().nextDouble()
-			else {
-				val DEVIATION = 0.25
-				val last = hist.last().num
-				last + (last * ThreadLocalRandom.current().nextDouble(-DEVIATION, +DEVIATION))
-			}
-		)
+    // - Threads are virtual sequential machines executing a body.
+    // - Threads can be _spawned_ from other threads and _joined_ (= awaited for termination) by other threads.
+    // - In this case we use the `thread` higher-order function, part of the Kotlin stdlib and uses regular JVM threads.
+    // - In turn the JVM implements threads using general-purpose OS threads, which are heavy on resources, so you can
+    //   have at most few 1000s. This means they may not be ideal for fine-grained concurrency.
+    // - Each thread will retrieve a single information about the stock and will output it on a dedicated
+    //   result channel.
+    thread {
+        avgResultChannel.send(s.avg())
+    }
+    thread {
+        valueResultChannel.send(s.current())
+    }
+    thread {
+        adviceResultChannel.send(s.advice())
+    }
 
-	fun next(): Value {
-		hist.offer(newVal())
-		return hist.last()
-	}
+    // - We'll join the stock information threads from the main thread by performing a potentially
+    //   thread-blocking `receive` operation from each result channel.
+    // - Quasar channels _can also be used with regular threads_.
+    val avg = avgResultChannel.receive()
+    val v = valueResultChannel.receive()
+    val advice = adviceResultChannel.receive()
 
-	// Random advice will work for now
-	fun advice(): Advice = Advice.values().get(ThreadLocalRandom.current().nextInt(0, Advice.values().size()))
-
-	// _Functional_: let's write a nifty mathematical equation for it
-	fun avg(): Double =
-		// What _is_ it? It is the division by its size of (the sum of (the projection of the historical data on its numerical value))
-		hist.map { it.num }.sum() / hist.size()
-}
-
-class SlowAndFarStockInfoMachinery {
-	companion object {
-		val MAX_WAIT_MILLIS: Long = 3000
-
-		fun <I, O> slowAsyncVal(s: I, f: (I) -> O): CompletableFuture<O> {
-			val ret = CompletableFuture<O>()
-			thread {
-				Strand.sleep(ThreadLocalRandom.current().nextLong(0, MAX_WAIT_MILLIS))
-				ret.complete(f(s))
-			}
-			return ret
-		}
-
-		fun findAsync(s: String) = slowAsyncVal(s, { Stock.find(it) ?: Stock.default })
-		fun avgAsync(s: Stock) = slowAsyncVal(s, { it.avg() })
-		fun nextAsync(s: Stock) = slowAsyncVal(s, { it.next() })
-		fun adviceAsync(s: Stock) = slowAsyncVal(s, { it.advice() })
-	}
-}
-
-public fun main(args: Array<String>) {
-	// ...So sequence, threads and joins are useful. But why using expensive threads
-	// when we can use featherweight fibers instead?
-
-	// 1) _Imperative I/O actions_: let's get the stock name from the user
-	print("Insert the stock name: ")
-
-	// 2) Now with a newly spawned actor doing selective receives!
-	val receiverAct = object : Actor() {
-		override Suspendable fun doRun() {
-			// 6) Let's receive and print first either the average or the value.
-			for (i in 1..2)
-				receive(60, TimeUnit.SECONDS) {
-					when (it) {
-						is Double -> println("The historical average is: ${it}")
-						is Value -> println("The current value is: ${it}")
-						is Timeout -> println("Timeout!!!") // Shouldn't happen
-						else -> defer()
-					}
-				}
-
-			// 7) Only then let's receive and print the advice.
-			receive(60, TimeUnit.SECONDS) {
-				when (it) {
-					is Advice -> {
-						println("The current advice is: ${it}")
-						return // Exit the actor w/non-local return
-					}
-					else -> println("Unexpected!!!") // Shouldn't happen
-				}
-			}
-
-			println("Never printed")
-		}
-	}
-
-	val receiverRef = receiverAct.spawn() // The actor handle
-
-	// Fibers (and any strands) can of course talk to actors
-	fiber {
-		// Of course, each thread / fiber has full stack available for debugging purposes.
-
-		// 4) Let the fiber convert a long, async operation into a fiber-blocking one and get its result.
-		val s = AsyncCompletionStage.get(SlowAndFarStockInfoMachinery.findAsync(readLine() ?: "goog"))
-
-		// 5) Let's launch more fibers to perform in parallel the other info retrieval, converting them into fiber-blocking,
-		//    and return their result on the channels.
-		fiber {
-			receiverRef.send(AsyncCompletionStage.get(SlowAndFarStockInfoMachinery.avgAsync(s)))
-		}
-		fiber {
-			receiverRef.send(AsyncCompletionStage.get(SlowAndFarStockInfoMachinery.nextAsync(s)))
-		}
-		fiber {
-			receiverRef.send(AsyncCompletionStage.get(SlowAndFarStockInfoMachinery.adviceAsync(s)))
-		}
-	}
-
-	// 3) Wait for actor termination before exiting
-	receiverAct.join()
+    // - We'll just output them directly using Kotlin's _string templates_ which are very convenient.
+    println("The historical average is: $avg")
+    println("The current value is: $v")
+    println("The current advice is: $advice")
 }
